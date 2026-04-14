@@ -1,0 +1,21 @@
+{
+  "name": "aura-social",
+  "version": "1.0.0",
+  "description": "Aura Social — Full Stack",
+  "scripts": {
+    "start":         "npm run check:deps && concurrently --names \"API,UI\" --prefix-colors \"cyan,magenta\" --kill-others-on-fail \"npm run _backend\" \"npm run _frontend\"",
+    "dev":           "npm run start",
+    "_backend":      "cd backend && node --watch server.js",
+    "_frontend":     "cd frontend && npm run dev",
+    "check:deps":    "node scripts/check-deps.js",
+    "install:all":   "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "build":         "cd frontend && npm run build",
+    "preview":       "concurrently --names \"API,UI\" --prefix-colors \"cyan,magenta\" \"cd backend && node server.js\" \"cd frontend && npm run preview\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
