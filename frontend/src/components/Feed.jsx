@@ -540,9 +540,20 @@ export default function Feed() {
                   {content.length > 0 && (
                     <span style={{ fontSize:12, color: content.length > 1800 ? '#ef4444' : 'var(--text-muted)' }}>{content.length}/2000</span>
                   )}
-                  <button className="btn btn-primary" onClick={createPost} disabled={!canSubmit} style={{ padding:'7px 16px', fontSize:13, gap:6 }}>
-                    <Send size={14}/>
-                    {posting ? 'Публикуем...' : 'Опубликовать'}
+                  <button className="btn btn-primary" onClick={createPost} disabled={!canSubmit} style={{ padding:'7px 16px', fontSize:13, gap:6, position: 'relative', minWidth: 100 }}>
+                    {posting ? (
+                      <>
+                        <span style={{ opacity: 0 }}><Send size={14}/> Опубликовать</span>
+                        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
+                          <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Send size={14}/>
+                        Опубликовать
+                      </>
+                    )}
                   </button>
                 </div>
               </div>

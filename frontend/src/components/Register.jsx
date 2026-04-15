@@ -100,8 +100,15 @@ export default function Register() {
                 {error}
               </div>
             )}
-            <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: 4, padding: '11px', fontSize: 15 }}>
-              {loading ? 'Создаём аккаунт...' : 'Зарегистрироваться'}
+            <button type="submit" className="btn btn-primary" disabled={loading} style={{ marginTop: 4, padding: '11px', fontSize: 15, position: 'relative', minWidth: 120 }}>
+              {loading ? (
+                <>
+                  <span style={{ opacity: 0 }}>Зарегистрироваться</span>
+                  <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
+                    <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                  </div>
+                </>
+              ) : 'Зарегистрироваться'}
             </button>
           </form>
         </div>

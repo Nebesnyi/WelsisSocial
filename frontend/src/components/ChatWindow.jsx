@@ -588,9 +588,16 @@ export default function ChatWindow() {
               color: messageInput.trim() ? '#fff' : 'var(--text-muted)',
               boxShadow: messageInput.trim() ? '0 2px 10px var(--accent-glow)' : 'none',
               transition:'all var(--transition)',
+              position: 'relative',
             }}
           >
-            <Send size={16}/>
+            {sending ? (
+              <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
+                <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              </div>
+            ) : (
+              <Send size={16}/>
+            )}
           </button>
         </div>
       </footer>

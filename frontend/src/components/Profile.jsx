@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, Check, X, LogOut, Edit2, Mail, User, Heart, MessageCircle, Briefcase, GraduationCap, MapPin, Phone, Globe, Calendar, Link as LinkIcon } from 'lucide-react'
+import { Camera, Check, X, LogOut, Edit2, Mail, User, Heart, MessageCircle, Briefcase, GraduationCap, MapPin, Phone, Globe, Link as LinkIcon } from 'lucide-react'
 import { toast } from 'react-toastify'
+import imageCompression from 'browser-image-compression'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 
@@ -170,12 +171,26 @@ export default function Profile() {
       return
     }
     
-    const fd = new FormData(); fd.append('avatar', file)
     try {
       setLoading(true)
+      toast.info('Сжатие изображения...')
+      
+      // Сжатие изображения
+      const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+        fileType: file.type,
+      }
+      
+      const compressedFile = await imageCompression(file, options)
+      
+      const fd = new FormData()
+      fd.append('avatar', compressedFile, compressedFile.name)
+      
       const r = await api.post('/users/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      updateUser(r.data.user); 
-      toast.success('Аватар обновлён!')
+      updateUser(r.data.user)
+      toast.success(`Аватар обновлён! (${Math.round(compressedFile.size / 1024)} KB)`)
       setMsg('avatar_ok')
     } catch (err) { 
       const errorMsg = err.response?.data?.error || 'Ошибка при загрузке аватара'
@@ -297,7 +312,7 @@ export default function Profile() {
                 <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
                   <User size={14} /> Основная информация
                 </h3>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12 }}>
                   <div>
                     <label style={labelStyle}>Имя</label>
                     <input className="ui-input" type="text" value={formData.first_name} onChange={e => updateFormData('first_name', e.target.value)} maxLength={50} />
@@ -442,9 +457,16 @@ export default function Profile() {
               </section>
 
               <div style={{ display:'flex', gap:8, justifyContent:'flex-end', paddingTop:8, borderTop:'1px solid var(--border)' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setEditing(false)}>Отмена</button>
-                <button type="submit" className="btn btn-primary" disabled={loading}>
-                  {loading ? 'Сохраняем...' : 'Сохранить'}
+                <button type="button" className="btn btn-secondary" onClick={() => setEditing(false)} disabled={loading}>Отмена</button>
+                <button type="submit" className="btn btn-primary" disabled={loading} style={{ position: 'relative', minWidth: 100 }}>
+                  {loading ? (
+                    <>
+                      <span style={{ opacity: 0 }}>Сохранить</span>
+                      <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
+                        <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                      </div>
+                    </>
+                  ) : 'Сохранить'}
                 </button>
               </div>
             </form>
@@ -535,7 +557,7 @@ export default function Profile() {
                 <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
                   <User size={14} /> Основная информация
                 </h3>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12 }}>
                   <InfoRow icon={<User size={15} />} label="Имя" value={user?.first_name || '—'} />
                   <InfoRow icon={<User size={15} />} label="Фамилия" value={user?.last_name || '—'} />
                   <InfoRow icon={<User size={15} />} label="Имя пользователя" value={user?.username} />

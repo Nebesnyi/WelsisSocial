@@ -606,6 +606,14 @@ body {
   .left-sidebar .sidebar-link { padding: 8px; border-radius: var(--radius-sm); }
   .left-sidebar .sidebar-link span { display: none; }
   .app-shell-content { margin-left: 0 !important; margin-bottom: 56px; }
+  
+  /* Mobile: Card padding reduction */
+  .card { padding: 12px !important; }
+  
+  /* Mobile: Profile header adjustments */
+  .profile-header-info { flex: 1; min-width: 0; }
+  .profile-actions-mobile { flex-wrap: wrap; gap: 6px !important; }
+  .profile-actions-mobile .btn { font-size: 12px !important; padding: 6px 10px !important; }
 }
 
 /* ══════════════════════════════════════════════════════════════
