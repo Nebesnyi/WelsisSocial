@@ -87,12 +87,16 @@ function EmojiPicker({ onSelect, onClose }) {
       {/* Вкладки */}
       <div style={{ display:'flex', borderBottom:'1px solid var(--border)', background:'var(--bg-surface-2)' }}>
         {EMOJI_TABS.map((t, i) => (
-          <button key={i} onClick={() => setTab(i)} style={{
-            flex:1, padding:'8px 0', fontSize:18, lineHeight:1,
-            background:'transparent', border:'none', cursor:'pointer',
-            borderBottom: tab === i ? '2px solid var(--accent)' : '2px solid transparent',
-            opacity: tab === i ? 1 : 0.55, transition:'opacity 0.15s',
-          }}>
+          <button 
+            key={i} 
+            onClick={(e) => { e.stopPropagation(); setTab(i) }} 
+            style={{
+              flex:1, padding:'8px 0', fontSize:18, lineHeight:1,
+              background:'transparent', border:'none', cursor:'pointer',
+              borderBottom: tab === i ? '2px solid var(--accent)' : '2px solid transparent',
+              opacity: tab === i ? 1 : 0.55, transition:'opacity 0.15s',
+            }}
+          >
             {t.label}
           </button>
         ))}

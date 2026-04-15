@@ -21,9 +21,14 @@ function EmojiPickerInline({ onSelect, onClose }) {
   const ref = useRef(null)
 
   useEffect(() => {
-    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose() }
-    document.addEventListener('mousedown', h)
-    return () => document.removeEventListener('mousedown', h)
+    const h = (e) => { 
+      if (ref.current && !ref.current.contains(e.target)) {
+        onClose()
+      }
+    }
+    // Используем capture phase, чтобы правильно определять клики
+    document.addEventListener('mousedown', h, true)
+    return () => document.removeEventListener('mousedown', h, true)
   }, [onClose])
 
   return (
@@ -38,12 +43,16 @@ function EmojiPickerInline({ onSelect, onClose }) {
     }}>
       <div style={{ display:'flex', borderBottom:'1px solid var(--border)', background:'var(--bg-surface-2)' }}>
         {EMOJI_TABS.map((t, i) => (
-          <button key={i} onClick={() => setTab(i)} style={{
-            flex:1, padding:'8px 0', fontSize:18, lineHeight:1,
-            background:'transparent', border:'none', cursor:'pointer',
-            borderBottom: tab === i ? '2px solid var(--accent)' : '2px solid transparent',
-            opacity: tab === i ? 1 : 0.55,
-          }}>{t.label}</button>
+          <button 
+            key={i} 
+            onClick={(e) => { e.stopPropagation(); setTab(i) }} 
+            style={{
+              flex:1, padding:'8px 0', fontSize:18, lineHeight:1,
+              background:'transparent', border:'none', cursor:'pointer',
+              borderBottom: tab === i ? '2px solid var(--accent)' : '2px solid transparent',
+              opacity: tab === i ? 1 : 0.55,
+            }}
+          >{t.label}</button>
         ))}
       </div>
       <div style={{ padding:8, display:'grid', gridTemplateColumns:'repeat(10, 1fr)', gap:2, maxHeight:200, overflowY:'auto', overflowX:'hidden' }}
