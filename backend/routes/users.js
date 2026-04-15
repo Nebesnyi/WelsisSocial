@@ -69,7 +69,9 @@ router.get('/:id', authMiddleware, (req, res) => {
       interests: user.interests ? JSON.parse(user.interests) : [],
       phone: user.phone,
       social_links: user.social_links ? JSON.parse(user.social_links) : {},
-      location: user.location
+      location: user.location,
+      badge_type: user.badge_type,
+      role: user.role
     }});
   } catch (err) { console.error(err); res.status(500).json({ error: 'Ошибка сервера' }); }
 });

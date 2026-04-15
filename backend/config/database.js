@@ -188,6 +188,8 @@ function initializeDatabase() {
     ['users', 'birth_date',  'TEXT DEFAULT NULL'],
     ['users', 'city',        'TEXT DEFAULT NULL'],
     ['users', 'about',       'TEXT DEFAULT NULL'],
+    // users: badge_type для системы верификации
+    ['users', 'badge_type',  "TEXT DEFAULT NULL CHECK(badge_type IN ('owner', 'admin', 'moderator', 'verified', 'premium', 'bot'))"],
   ];
 
   for (const [table, column, definition] of migrations) {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, UserPlus, UserMinus, MessageCircle, Users, Wifi, Clock } from 'lucide-react'
 import api from '../../services/api'
+import UserBadge from '../UserBadge'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -33,8 +34,9 @@ function UserCard({ user, isFollowing, followLoading, onToggleFollow, onMessage,
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <button onClick={() => onProfile(user.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left' }}>
+        <button onClick={() => onProfile(user.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6 }}>
           <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{user.username}</p>
+          {user.badge_type && <UserBadge type={user.badge_type} size="small" />}
         </button>
         <p style={{ fontSize: 12, color: STATUS_COLORS[user.status] || 'var(--text-muted)', marginTop: 2 }}>
           {STATUS_LABELS[user.status] || 'Оффлайн'}

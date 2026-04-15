@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Shield, Trash2, Edit2, Save, X, AlertCircle, ChevronLeft, Search } from 'lucide-react'
+import { Users, Shield, Trash2, Edit2, Save, X, AlertCircle, ChevronLeft, Search, Crown, BadgeCheck } from 'lucide-react'
 import api from '../../services/api'
+import UserBadge from '../UserBadge'
 
 export default function AdminPanel() {
   const navigate = useNavigate()
@@ -15,6 +16,9 @@ export default function AdminPanel() {
   // Для редактирования роли
   const [editingUserId, setEditingUserId] = useState(null)
   const [tempRole, setTempRole] = useState('user')
+  // Для редактирования бейджа
+  const [editingBadgeId, setEditingBadgeId] = useState(null)
+  const [tempBadge, setTempBadge] = useState(null)
 
   useEffect(() => {
     loadUsers()
@@ -71,6 +75,17 @@ export default function AdminPanel() {
       setSuccessMsg('Роль успешно изменена')
     } catch (err) {
       setError(err?.response?.data?.error || 'Ошибка при изменении роли')
+    }
+  }
+
+  async function handleBadgeChange(userId, newBadge) {
+    try {
+      await api.put(`/admin/users/${userId}/badge`, { badge_type: newBadge })
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, badge_type: newBadge } : u))
+      setEditingBadgeId(null)
+      setSuccessMsg('Бейдж успешно изменен')
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Ошибка при изменении бейджа')
     }
   }
 
@@ -196,6 +211,7 @@ export default function AdminPanel() {
                       <tr style={{ background:'var(--bg-surface-2)', borderBottom:'1px solid var(--border)' }}>
                         <th style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Пользователь</th>
                         <th style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Email</th>
+                        <th style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Бейдж</th>
                         <th style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Роль</th>
                         <th style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Статус</th>
                         <th style={{ padding:'12px 16px', textAlign:'right', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Действия</th>
@@ -210,9 +226,55 @@ export default function AdminPanel() {
                                 {user.username?.[0]?.toUpperCase() || 'U'}
                               </div>
                               <span style={{ fontSize:14, fontWeight:500, color:'var(--text-primary)' }}>{user.username}</span>
+                              {user.badge_type && <UserBadge type={user.badge_type} size="small" />}
                             </div>
                           </td>
                           <td style={{ padding:'12px 16px', fontSize:13, color:'var(--text-muted)' }}>{user.email}</td>
+                          <td style={{ padding:'12px 16px' }}>
+                            {editingBadgeId === user.id ? (
+                              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                <select
+                                  value={tempBadge || ''}
+                                  onChange={(e) => setTempBadge(e.target.value || null)}
+                                  style={{
+                                    padding:'4px 8px', fontSize:12, borderRadius:4,
+                                    background:'var(--bg-input)', border:'1px solid var(--border)',
+                                    color:'var(--text-primary)', outline:'none'
+                                  }}
+                                >
+                                  <option value="">Нет бейджа</option>
+                                  <option value="verified">Проверенный</option>
+                                  <option value="premium">Premium</option>
+                                  <option value="moderator">Модератор</option>
+                                  <option value="admin">Администратор</option>
+                                  <option value="owner">Владелец</option>
+                                  <option value="bot">Бот</option>
+                                </select>
+                                <button onClick={() => handleBadgeChange(user.id, tempBadge || null)} className="btn-icon" style={{ width:28, height:28 }}><Save size={14}/></button>
+                                <button onClick={() => setEditingBadgeId(null)} className="btn-icon" style={{ width:28, height:28 }}><X size={14}/></button>
+                              </div>
+                            ) : (
+                              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                {user.badge_type ? (
+                                  <span style={{
+                                    fontSize:12, padding:'4px 8px', borderRadius:12, fontWeight:500,
+                                    background: 'rgba(109, 94, 245, 0.12)',
+                                    color: 'var(--accent)'
+                                  }}>
+                                    {user.badge_type === 'verified' && 'Проверенный'}
+                                    {user.badge_type === 'premium' && 'Premium'}
+                                    {user.badge_type === 'moderator' && 'Модератор'}
+                                    {user.badge_type === 'admin' && 'Администратор'}
+                                    {user.badge_type === 'owner' && 'Владелец'}
+                                    {user.badge_type === 'bot' && 'Бот'}
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize:12, color:'var(--text-muted)' }}>—</span>
+                                )}
+                                <button onClick={() => { setEditingBadgeId(user.id); setTempBadge(user.badge_type) }} className="btn-icon" style={{ width:28, height:28, opacity:0.6 }}><Edit2 size={14}/></button>
+                              </div>
+                            )}
+                          </td>
                           <td style={{ padding:'12px 16px' }}>
                             {editingUserId === user.id ? (
                               <div style={{ display:'flex', alignItems:'center', gap:6 }}>

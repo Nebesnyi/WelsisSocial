@@ -4,6 +4,7 @@ import { MessageCircle, UserPlus, UserMinus, ArrowLeft, Heart } from 'lucide-rea
 import { useAuth } from '../../contexts/AuthContext'
 import { formatLastSeen } from '../../utils/formatTime'
 import api from '../../services/api'
+import UserBadge from '../UserBadge'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -190,9 +191,12 @@ export default function UserProfileView() {
               </div>
 
               <div style={{ flex:1, minWidth:0, paddingBottom:4, paddingTop:8 }}>
-                <h1 style={{ fontSize:22, fontWeight:700, color:'var(--text-primary)', lineHeight:1.2 }}>
-                  {profileUser?.username}
-                </h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h1 style={{ fontSize:22, fontWeight:700, color:'var(--text-primary)', lineHeight:1.2 }}>
+                    {profileUser?.username}
+                  </h1>
+                  {profileUser?.badge_type && <UserBadge type={profileUser.badge_type} size="medium" />}
+                </div>
                 <p style={{ fontSize:13, marginTop:4,
                   color: profileUser?.status === 'online' ? 'var(--status-online)' : 'var(--text-muted)',
                   display:'flex', alignItems:'center', gap:5,

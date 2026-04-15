@@ -5,6 +5,7 @@ import { toast } from 'react-toastify'
 import imageCompression from 'browser-image-compression'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
+import UserBadge from './UserBadge'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -256,9 +257,12 @@ export default function Profile() {
 
               {/* Имя + кнопки */}
               <div style={{ flex:1, minWidth:0, paddingBottom:4, paddingTop:8 }}>
-                <h1 style={{ fontSize:22, fontWeight:700, color:'var(--text-primary)', lineHeight:1.2 }}>
-                  {user?.username}
-                </h1>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <h1 style={{ fontSize:22, fontWeight:700, color:'var(--text-primary)', lineHeight:1.2 }}>
+                    {user?.username}
+                  </h1>
+                  {user?.badge_type && <UserBadge type={user.badge_type} size="medium" />}
+                </div>
                 <p style={{ fontSize:13, color:'var(--status-online)', marginTop:3, display:'flex', alignItems:'center', gap:5 }}>
                   <span style={{ width:7, height:7, borderRadius:'50%', background:'var(--status-online)', display:'inline-block' }} />
                   в сети

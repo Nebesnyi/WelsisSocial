@@ -11,12 +11,55 @@ const router = express.Router();
 router.get('/users', (req, res) => {
   try {
     const users = require('../config/database').getAll(
-      `SELECT id, email, username, avatar, status, role, last_seen, created_at 
+      `SELECT id, email, username, avatar, status, role, badge_type, last_seen, created_at 
        FROM users ORDER BY created_at DESC`
     );
     res.json({ users });
   } catch (error) {
     console.error('❌ admin getUsers:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * PUT /api/admin/users/:id/badge
+ * Изменить тип бейджа пользователя (только админ)
+ */
+router.put('/users/:id/badge', [
+  body('badge_type').optional().isIn(['owner', 'admin', 'moderator', 'verified', 'premium', 'bot', null]).withMessage('Недопустимый тип бейджа')
+], (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const userId = parseInt(req.params.id);
+    const { badge_type } = req.body;
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Некорректный ID пользователя' });
+    }
+
+    // Защита от изменения самого себя
+    if (userId === req.user.id) {
+      return res.status(400).json({ error: 'Нельзя изменить бейдж самого себя' });
+    }
+
+    const user = User.getById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    const db = require('../config/database');
+    db.run(`UPDATE users SET badge_type = ? WHERE id = ?`, [badge_type, userId]);
+    
+    res.json({
+      message: `Бейдж пользователя ${user.username} изменен на ${badge_type || 'отсутствует'}`,
+      badge_type
+    });
+  } catch (error) {
+    console.error('❌ admin setBadge:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });

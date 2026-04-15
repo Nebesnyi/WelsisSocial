@@ -1,0 +1,133 @@
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  animation: badge-pulse 2s infinite;
+  transition: all 0.3s ease;
+}
+
+.user-badge:hover {
+  transform: scale(1.15);
+  filter: brightness(1.2);
+}
+
+/* Размеры */
+.badge-small {
+  width: 18px;
+  height: 18px;
+  padding: 2px;
+}
+
+.badge-medium {
+  width: 24px;
+  height: 24px;
+  padding: 3px;
+}
+
+.badge-large {
+  width: 32px;
+  height: 32px;
+  padding: 4px;
+}
+
+/* Цвета и свечение для каждой роли */
+.badge-owner {
+  color: #FFD700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.6),
+              0 0 20px rgba(255, 215, 0, 0.4),
+              inset 0 0 10px rgba(255, 215, 0, 0.2);
+  animation: badge-glow-gold 2s infinite alternate;
+}
+
+.badge-admin {
+  color: #FF4444;
+  box-shadow: 0 0 10px rgba(255, 68, 68, 0.6),
+              0 0 20px rgba(255, 68, 68, 0.4),
+              inset 0 0 10px rgba(255, 68, 68, 0.2);
+  animation: badge-pulse-red 1.5s infinite;
+}
+
+.badge-moderator {
+  color: #9B59B6;
+  box-shadow: 0 0 10px rgba(155, 89, 182, 0.6),
+              0 0 20px rgba(155, 89, 182, 0.4),
+              inset 0 0 10px rgba(155, 89, 182, 0.2);
+}
+
+.badge-verified {
+  color: #3498DB;
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.5),
+              0 0 15px rgba(52, 152, 219, 0.3);
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(52, 152, 219, 0.1));
+}
+
+.badge-premium {
+  color: #1ABC9C;
+  box-shadow: 0 0 10px rgba(26, 188, 156, 0.6),
+              0 0 20px rgba(26, 188, 156, 0.4);
+  background: linear-gradient(135deg, rgba(26, 188, 156, 0.3), rgba(26, 188, 156, 0.1));
+  animation: badge-shimmer 3s infinite linear;
+}
+
+.badge-bot {
+  color: #95A5A6;
+  box-shadow: 0 0 5px rgba(149, 165, 166, 0.4);
+  opacity: 0.8;
+}
+
+/* Анимации */
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes badge-pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 68, 68, 0.6),
+                0 0 20px rgba(255, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 68, 68, 0.8),
+                0 0 30px rgba(255, 68, 68, 0.6);
+  }
+}
+
+@keyframes badge-glow-gold {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6),
+                0 0 20px rgba(255, 215, 0, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
+                0 0 40px rgba(255, 215, 0, 0.6);
+  }
+}
+
+@keyframes badge-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  .badge-large {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .badge-medium {
+    width: 20px;
+    height: 20px;
+  }
+}
