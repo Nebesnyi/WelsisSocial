@@ -1,12 +1,1 @@
-```
-# Dependencies
-node_modules/
-
-# Database files
-*.sqlite-shm
-*.sqlite-wal
-*.sqlite
-
-# Package lock files
-package-lock.json
-```
+Nothing needs to be added to .gitignore since only a source file (Feed.jsx) was modified and there are no build artifacts, dependencies, or temporary files in the changes.
