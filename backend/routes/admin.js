@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/users', (req, res) => {
   try {
     const users = require('../config/database').getAll(
-      `SELECT id, email, username, avatar, status, role, is_blocked, last_seen, created_at 
+      `SELECT id, email, username, avatar, status, role, last_seen, created_at 
        FROM users ORDER BY created_at DESC`
     );
     res.json({ users });
@@ -86,79 +86,6 @@ router.delete('/users/:id', (req, res) => {
     res.json({ message: `Пользователь ${user.username} удалён` });
   } catch (error) {
     console.error('❌ admin deleteUser:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
-  }
-});
-
-/**
- * PUT /api/admin/users/:id/block
- * Заблокировать/разблокировать пользователя (только админ)
- */
-router.put('/users/:id/block', (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-    const { blocked } = req.body;
-
-    if (isNaN(userId)) {
-      return res.status(400).json({ error: 'Некорректный ID пользователя' });
-    }
-
-    if (typeof blocked !== 'boolean') {
-      return res.status(400).json({ error: 'Поле blocked должно быть булевым значением' });
-    }
-
-    const user = User.getById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
-    }
-
-    // Нельзя заблокировать самого себя (проверка только если есть авторизация)
-    if (req.user && userId === req.user.id) {
-      return res.status(400).json({ error: 'Нельзя заблокировать самого себя' });
-    }
-
-    User.setBlocked(userId, blocked);
-    
-    res.json({
-      message: blocked ? `Пользователь ${user.username} заблокирован` : `Пользователь ${user.username} разблокирован`,
-      user: User.getById(userId)
-    });
-  } catch (error) {
-    console.error('❌ admin blockUser:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
-  }
-});
-
-/**
- * POST /api/admin/users/:id/reset-password
- * Сбросить пароль пользователя (только админ)
- */
-router.post('/users/:id/reset-password', (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-
-    if (isNaN(userId)) {
-      return res.status(400).json({ error: 'Некорректный ID пользователя' });
-    }
-
-    const user = User.getById(userId);
-    if (!user) {
-      return res.status(404).json({ error: 'Пользователь не найден' });
-    }
-
-    // Генерируем временный пароль
-    const tempPassword = Math.random().toString(36).slice(-8);
-    const passwordHash = require('bcryptjs').hashSync(tempPassword, 10);
-
-    const db = require('../config/database');
-    db.run(`UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [passwordHash, userId]);
-
-    res.json({
-      message: `Пароль пользователя ${user.username} сброшен`,
-      temporaryPassword: tempPassword
-    });
-  } catch (error) {
-    console.error('❌ admin resetPassword:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });

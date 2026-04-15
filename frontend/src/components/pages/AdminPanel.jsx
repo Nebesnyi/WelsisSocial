@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Shield, Trash2, Edit2, Save, X, AlertCircle, ChevronLeft, Search, Lock, Unlock, KeyRound, Ban, CheckCircle } from 'lucide-react'
+import { Users, Shield, Trash2, Edit2, Save, X, AlertCircle, ChevronLeft, Search } from 'lucide-react'
 import api from '../../services/api'
 
 export default function AdminPanel() {
@@ -65,36 +65,12 @@ export default function AdminPanel() {
 
   async function handleRoleChange(userId, newRole) {
     try {
-      await api.put(`/admin/users/${userId}/role`, { role: newRole })
+      await api.patch(`/admin/users/${userId}/role`, { role: newRole })
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
       setEditingUserId(null)
       setSuccessMsg('Роль успешно изменена')
     } catch (err) {
       setError(err?.response?.data?.error || 'Ошибка при изменении роли')
-    }
-  }
-
-  async function handleBlockUser(userId, blocked) {
-    try {
-      await api.put(`/admin/users/${userId}/block`, { blocked })
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_blocked: blocked ? 1 : 0 } : u))
-      setSuccessMsg(blocked ? 'Пользователь заблокирован' : 'Пользователь разблокирован')
-    } catch (err) {
-      setError(err?.response?.data?.error || 'Ошибка при изменении статуса блокировки')
-    }
-  }
-
-  async function handleResetPassword(userId) {
-    if (!window.confirm('Вы уверены, что хотите сбросить пароль этому пользователю? Ему будет выдан временный пароль.')) return
-    
-    try {
-      const res = await api.post(`/admin/users/${userId}/reset-password`)
-      const tempPassword = res.data.temporaryPassword
-      navigator.clipboard.writeText(tempPassword).catch(() => {})
-      alert(`Пароль сброшен!\n\nВременный пароль: ${tempPassword}\n\n(Скопировано в буфер обмена)`);
-      setSuccessMsg('Пароль успешно сброшен')
-    } catch (err) {
-      setError(err?.response?.data?.error || 'Ошибка при сбросе пароля')
     }
   }
 
@@ -269,57 +245,23 @@ export default function AdminPanel() {
                             )}
                           </td>
                           <td style={{ padding:'12px 16px' }}>
-                            {user.is_blocked ? (
-                              <span style={{
-                                fontSize:12, padding:'4px 8px', borderRadius:12, fontWeight:500,
-                                background: 'rgba(239, 68, 68, 0.12)',
-                                color: '#ef4444',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4
-                              }}>
-                                <Ban size={12}/> Заблокирован
-                              </span>
-                            ) : (
-                              <span style={{
-                                fontSize:12, padding:'4px 8px', borderRadius:12, fontWeight:500,
-                                background: 'rgba(34, 197, 94, 0.12)',
-                                color: '#22c55e',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 4
-                              }}>
-                                <CheckCircle size={12}/> Активен
-                              </span>
-                            )}
+                            <span style={{
+                              fontSize:12, padding:'4px 8px', borderRadius:12, fontWeight:500,
+                              background: 'rgba(34, 197, 94, 0.12)',
+                              color: '#22c55e'
+                            }}>
+                              Активен
+                            </span>
                           </td>
                           <td style={{ padding:'12px 16px', textAlign:'right' }}>
-                            <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:4 }}>
-                              <button 
-                                onClick={() => handleBlockUser(user.id, !user.is_blocked)}
-                                className="btn-icon"
-                                style={{ width:32, height:32, color: user.is_blocked ? '#22c55e' : '#f59e0b', opacity:0.8 }}
-                                title={user.is_blocked ? 'Разблокировать' : 'Заблокировать'}
-                              >
-                                {user.is_blocked ? <Unlock size={16}/> : <Lock size={16}/>}
-                              </button>
-                              <button 
-                                onClick={() => handleResetPassword(user.id)}
-                                className="btn-icon"
-                                style={{ width:32, height:32, color:'#6366f1', opacity:0.7 }}
-                                title="Сбросить пароль"
-                              >
-                                <KeyRound size={16}/>
-                              </button>
-                              <button 
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="btn-icon"
-                                style={{ width:32, height:32, color:'#ef4444', opacity:0.7 }}
-                                title="Удалить пользователя"
-                              >
-                                <Trash2 size={16}/>
-                              </button>
-                            </div>
+                            <button 
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="btn-icon"
+                              style={{ width:32, height:32, color:'#ef4444', opacity:0.7 }}
+                              title="Удалить пользователя"
+                            >
+                              <Trash2 size={16}/>
+                            </button>
                           </td>
                         </tr>
                       ))}
