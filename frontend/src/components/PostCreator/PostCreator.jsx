@@ -137,7 +137,7 @@ export const PostCreator = memo(function PostCreator({ user, onCreate, onError }
                 boxSizing: 'border-box',
               }}
             />
-            <div style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)' }}>
+            <div style={{ position: 'absolute', right: 8, bottom: 8, display: 'flex', alignItems: 'center' }}>
               <button
                 type="button"
                 onClick={(e) => {
@@ -158,7 +158,7 @@ export const PostCreator = memo(function PostCreator({ user, onCreate, onError }
                 😊
               </button>
             </div>
-            {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="bottom-left" />}
+            {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="top-right" />}
           </div>
 
           {imagePreview && (

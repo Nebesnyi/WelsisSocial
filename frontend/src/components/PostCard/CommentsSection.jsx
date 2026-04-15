@@ -156,7 +156,7 @@ export const CommentsSection = memo(function CommentsSection({ postId, commentsC
                 }}
                 maxLength={500}
               />
-              <div style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)' }}>
+              <div style={{ position: 'absolute', right: 6, bottom: 6, display: 'flex', alignItems: 'center' }}>
                 <button
                   type="button"
                   onClick={(e) => {
@@ -176,7 +176,7 @@ export const CommentsSection = memo(function CommentsSection({ postId, commentsC
                   😊
                 </button>
               </div>
-              {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="bottom-left" />}
+              {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="top-right" />}
             </div>
             <button
               type="submit"

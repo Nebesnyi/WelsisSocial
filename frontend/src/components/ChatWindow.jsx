@@ -67,7 +67,7 @@ const EMOJI_TABS = [
   },
 ]
 
-function EmojiPicker({ onSelect, onClose }) {
+function EmojiPicker({ onSelect, onClose, position = 'bottom-left' }) {
   const [tab, setTab] = useState(0)
   const ref = useRef(null)
 
@@ -89,9 +89,18 @@ function EmojiPicker({ onSelect, onClose }) {
     return () => el.removeEventListener('wheel', handleWheel)
   }, [])
 
+  // Позиционирование
+  const positionStyles = {
+    'bottom-left': { bottom:'calc(100% + 8px)', left:0, right:'auto' },
+    'bottom-right': { bottom:'calc(100% + 8px)', right:0, left:'auto' },
+    'top-right': { top:'100%', right:0, bottom:'auto', left:'auto' },
+    'top-left': { top:'100%', left:0, bottom:'auto', right:'auto' },
+  }
+
   return (
     <div ref={ref} style={{
-      position:'absolute', bottom:'calc(100% + 8px)', left:0,
+      position:'absolute',
+      ...positionStyles[position],
       width:320, background:'var(--bg-surface)',
       border:'1px solid var(--border)', borderRadius:'var(--radius-md)',
       boxShadow:'var(--shadow-lg)', zIndex:200, overflow:'hidden',
@@ -509,7 +518,7 @@ export default function ChatWindow() {
             >
               <Smile size={17}/>
             </button>
-            {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)}/>}
+            {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="top-right"/>}
           </div>
 
           {/* Ввод */}
