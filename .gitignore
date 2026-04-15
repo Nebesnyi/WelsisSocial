@@ -1,43 +1,45 @@
 ```
-# Database files
-*.sqlite
-*.db
-*.db-journal
-
 # Dependencies
 node_modules/
 
-# Logs and temp files
-*.log
-*.tmp
-
-# Environment
+# Environment variables
 .env
 .env.local
-*.env.*
+.env.*
 
-# Editors
+# Logs
+*.log
+
+# Build outputs
+dist/
+build/
+target/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# IDE files
 .vscode/
 .idea/
 
-# Python
+# Python cache (if present in project)
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
+
+# Coverage reports
+coverage/
+htmlcov/
 .coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
+
+# OS generated files
 .DS_Store
+Thumbs.db
+
+# Package lock files (already tracked in your case)
+# package-lock.json - tracked in your repo
+# yarn.lock - if using yarn
 ```

@@ -1,13 +1,12 @@
 const express = require('express');
 const { param, validationResult } = require('express-validator');
 const { authMiddleware } = require('../middleware/auth');
-const { apiLimiter } = require('../middleware/rateLimiter');
 const Follow = require('../models/Follow');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 
 const router = express.Router();
-router.use(apiLimiter);
+// apiLimiter теперь применяется глобально в server.js
 router.use(authMiddleware);
 
 router.get('/me', (req, res) => {

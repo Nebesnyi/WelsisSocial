@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Camera, Check, X, LogOut, Edit2, Mail, User, Heart, MessageCircle, Briefcase, GraduationCap, MapPin, Phone, Globe, Calendar, Link as LinkIcon } from 'lucide-react'
+import { toast } from 'react-toastify'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 
@@ -90,13 +91,33 @@ export default function Profile() {
 
   async function handleSave(e) {
     e.preventDefault()
+    
+    // Валидация на клиенте
+    if (formData.username && formData.username.length < 2) {
+      toast.error('Имя пользователя должно быть не менее 2 символов')
+      return
+    }
+    if (formData.first_name && formData.first_name.length > 50) {
+      toast.error('Имя не может быть длиннее 50 символов')
+      return
+    }
+    if (formData.about && formData.about.length > 500) {
+      toast.error('О себе не может быть длиннее 500 символов')
+      return
+    }
+    
     setLoading(true); setMsg('')
     try {
       const r = await api.put('/users/profile', formData)
       updateUser(r.data.user)
+      toast.success('Профиль обновлён!')
       setMsg('ok')
       setEditing(false)
-    } catch { setMsg('err') }
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Ошибка при сохранении'
+      toast.error(errorMsg)
+      setMsg('err')
+    }
     finally { setLoading(false) }
   }
 
@@ -135,12 +156,32 @@ export default function Profile() {
 
   async function handleAvatar(e) {
     const file = e.target.files[0]; if (!file) return
+    
+    // Валидация файла
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      toast.error('Разрешены только изображения (JPEG, PNG, GIF, WebP)')
+      e.target.value = ''
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Размер файла не должен превышать 5MB')
+      e.target.value = ''
+      return
+    }
+    
     const fd = new FormData(); fd.append('avatar', file)
     try {
       setLoading(true)
       const r = await api.post('/users/avatar', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      updateUser(r.data.user); setMsg('avatar_ok')
-    } catch { setMsg('err') }
+      updateUser(r.data.user); 
+      toast.success('Аватар обновлён!')
+      setMsg('avatar_ok')
+    } catch (err) { 
+      const errorMsg = err.response?.data?.error || 'Ошибка при загрузке аватара'
+      toast.error(errorMsg)
+      setMsg('err') 
+    }
     finally { setLoading(false); e.target.value = '' }
   }
 

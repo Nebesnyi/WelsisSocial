@@ -1,10 +1,9 @@
 const express = require('express');
 const { authMiddleware } = require('../middleware/auth');
-const { apiLimiter } = require('../middleware/rateLimiter');
 const Notification = require('../models/Notification');
 
 const router = express.Router();
-router.use(apiLimiter);
+// apiLimiter теперь применяется глобально в server.js
 router.use(authMiddleware);
 
 // GET /api/notifications — list

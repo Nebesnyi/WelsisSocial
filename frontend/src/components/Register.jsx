@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Zap, Lock, Mail, User } from 'lucide-react'
+import { toast } from 'react-toastify'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Register() {
@@ -15,13 +16,30 @@ export default function Register() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (password.length < 6) { setError('Пароль должен быть не менее 6 символов'); return }
+    
+    // Валидация на клиенте
+    if (password.length < 6) {
+      toast.error('Пароль должен быть не менее 6 символов')
+      return
+    }
+    if (!email.includes('@')) {
+      toast.error('Введите корректный email')
+      return
+    }
+    if (username.length < 2 || username.length > 30) {
+      toast.error('Имя должно быть от 2 до 30 символов')
+      return
+    }
+    
     setError(''); setLoading(true)
     try {
       await register(email, password, username)
+      toast.success('Регистрация успешна! Добро пожаловать!')
       navigate('/messages')
     } catch (err) {
-      setError(err.response?.data?.error || 'Ошибка при регистрации')
+      const errorMsg = err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || 'Ошибка при регистрации'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally { setLoading(false) }
   }
 

@@ -38,6 +38,13 @@ if (jwtSecret.length < 32) {
   throw new Error('JWT_SECRET must be at least 32 chars');
 }
 
+// Helmet security headers
+const helmet = require('helmet');
+app.use(helmet({
+  contentSecurityPolicy: false, // Отключено для разработки, включить в production
+  crossOriginEmbedderPolicy: false
+}));
+
 function buildAllowedOrigins() {
   const raw = process.env.CORS_ORIGIN || '';
   const list = raw.split(',').map(v => v.trim()).filter(Boolean);
@@ -71,10 +78,8 @@ const io = new Server(server, {
 
 app.use(cors(corsOptions));
 app.use((req, res, next) => {
-  res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Helmet уже устанавливает большинство заголовков, оставляем только кастомные
   res.setHeader('Referrer-Policy', 'no-referrer');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
@@ -83,6 +88,10 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Global rate limiter - применяется ко всем запросам
+const { apiLimiter } = require('./middleware/rateLimiter');
+app.use('/api', apiLimiter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
   dotfiles: 'deny',
   index: false,
@@ -111,6 +120,34 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/follows', followRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+
+app.use((err, req, res, next) => {
+  console.error('💥 Global Error:', err);
+  
+  // Rate limit errors
+  if (err.code === 'LIMIT_TOO_MANY_REQUESTS' || err.statusCode === 429) {
+    return res.status(429).json({ error: 'Слишком много запросов, попробуйте позже' });
+  }
+  
+  // Multer errors
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ error: `Ошибка загрузки: ${err.message}` });
+  }
+  
+  // JSON parse errors
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({ error: 'Некорректный JSON' });
+  }
+  
+  // Default error
+  const status = err.statusCode || err.status || 500;
+  res.status(status).json({
+    error: status === 500 ? 'Внутренняя ошибка сервера' : err.message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+});
 
 
 app.get('/api/health', (req, res) => {

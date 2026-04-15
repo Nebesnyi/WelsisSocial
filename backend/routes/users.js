@@ -4,13 +4,13 @@ const path    = require('path');
 const fs      = require('fs');
 const { body, validationResult } = require('express-validator');
 const { authMiddleware } = require('../middleware/auth');
-const { apiLimiter, uploadLimiter } = require('../middleware/rateLimiter');
+const { uploadLimiter } = require('../middleware/rateLimiter');
 const { makeMimeFilter, validateUploadedFile } = require('../middleware/validateMime');
 const { parsePagination, paginationMeta } = require('../middleware/paginate');
 const User = require('../models/User');
 
 const router = express.Router();
-router.use(apiLimiter);
+// apiLimiter теперь применяется глобально в server.js
 
 const ROOT_UPLOADS  = path.join(__dirname, '..', 'uploads');
 const AVATAR_MIMES  = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];

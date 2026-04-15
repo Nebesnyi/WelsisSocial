@@ -5,14 +5,14 @@ const fs          = require('fs');
 const fsPromises  = require('fs/promises');
 const { body, validationResult } = require('express-validator');
 const { authMiddleware } = require('../middleware/auth');
-const { apiLimiter, uploadLimiter } = require('../middleware/rateLimiter');
+const { uploadLimiter } = require('../middleware/rateLimiter');
 const { makeMimeFilter, validateUploadedFile } = require('../middleware/validateMime');
 const { parsePagination, paginationMeta } = require('../middleware/paginate');
 const Message = require('../models/Message');
 const Chat    = require('../models/Chat');
 
 const router = express.Router();
-router.use(apiLimiter);
+// apiLimiter теперь применяется глобально в server.js
 
 const ROOT_UPLOADS    = path.join(__dirname, '..', 'uploads');
 const ALLOWED_MIMES   = [

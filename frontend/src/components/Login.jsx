@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Zap, Lock, Mail } from 'lucide-react'
+import { toast } from 'react-toastify'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
@@ -14,12 +15,26 @@ export default function Login() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    
+    // Валидация на клиенте
+    if (!email.includes('@')) {
+      toast.error('Введите корректный email')
+      return
+    }
+    if (password.length < 1) {
+      toast.error('Введите пароль')
+      return
+    }
+    
     setError(''); setLoading(true)
     try {
       await login(email, password)
+      toast.success('С возвращением!')
       navigate('/messages')
     } catch (err) {
-      setError(err.response?.data?.error || 'Неверный email или пароль')
+      const errorMsg = err.response?.data?.error || 'Неверный email или пароль'
+      setError(errorMsg)
+      toast.error(errorMsg)
     } finally { setLoading(false) }
   }
 
