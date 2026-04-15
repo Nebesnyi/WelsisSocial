@@ -24,7 +24,7 @@ const AdminPanel = () => {
         setStats(res.data)
       } else if (activeTab === 'users') {
         const res = await axios.get('/api/admin/users', config)
-        setUsers(res.data)
+        setUsers(Array.isArray(res.data) ? res.data : (res.data.users || []))
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Ошибка загрузки данных')
