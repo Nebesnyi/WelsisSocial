@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 
 export const sidebarItems = [
-  { key: 'home',     label: 'Главная',    to: '/feed',     icon: House },
+  { key: 'home',     label: 'Лента',      to: '/feed',     icon: House },
   { key: 'friends',  label: 'Люди',       to: '/friends',  icon: Users },
   { key: 'messages', label: 'Сообщения',  to: '/messages', icon: MessageCircle },
   { key: 'games',    label: 'Игры',       to: '/games',    icon: Gamepad2 },
