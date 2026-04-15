@@ -55,11 +55,19 @@ function EmojiPickerInline({ onSelect, onClose }) {
           >{t.label}</button>
         ))}
       </div>
-      <div style={{ padding:8, display:'grid', gridTemplateColumns:'repeat(10, 1fr)', gap:2, maxHeight:200, overflowY:'auto', overflowX:'hidden' }}
+      <div 
+        ref={scrollRef}
+        style={{ padding:8, display:'grid', gridTemplateColumns:'repeat(10, 1fr)', gap:2, maxHeight:200, overflowY:'auto', overflowX:'hidden' }}
         onWheel={(e) => {
           e.stopPropagation();
-          const el = e.currentTarget;
-          el.scrollTop += e.deltaY;
+          e.preventDefault();
+          const el = scrollRef.current;
+          if (el) {
+            el.scrollTop += e.deltaY;
+          }
+        }}
+        onTouchMove={(e) => {
+          e.stopPropagation();
         }}
       >
         {EMOJI_TABS[tab].emojis.map((emoji, i) => (
