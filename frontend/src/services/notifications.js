@@ -7,7 +7,12 @@ let _sound = null
 
 function getSound() {
   if (!_sound) {
-    _sound = new Audio('/notification-sound.mp3')
+    // Пробуем WAV (наш сгенерированный), затем MP3
+    _sound = new Audio('/notification-sound.wav')
+    _sound.onerror = () => {
+      console.warn('⚠️ WAV не загрузился, пробуем MP3')
+      _sound = new Audio('/notification-sound.mp3')
+    }
   }
   return _sound
 }
