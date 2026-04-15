@@ -100,43 +100,57 @@ const AdminPanel = () => {
       )}
 
       {!loading && !error && activeTab === 'users' && (
-        <table className="w-full bg-white rounded shadow">
-          <thead>
-            <tr className="border-b">
-              <th className="p-3 text-left">ID</th>
-              <th className="p-3 text-left">Ник</th>
-              <th className="p-3 text-left">Почта</th>
-              <th className="p-3 text-left">Роль</th>
-              <th className="p-3 text-left">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user.id} className="border-b">
-                <td className="p-3">{user.id}</td>
-                <td className="p-3">{user.username}</td>
-                <td className="p-3">{user.email}</td>
-                <td className="p-3">{user.role}</td>
-                <td className="p-3 flex gap-2">
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    className="border rounded px-2 py-1"
-                  >
-                    <option value="user">user</option>
-                    <option value="admin">admin</option>
-                  </select>
-                  <button
-                    onClick={() => handleDeleteUser(user.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                  >
-                    Удалить
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full bg-white rounded shadow">
+            <thead>
+              <tr className="border-b">
+                <th className="p-3 text-left">ID</th>
+                <th className="p-3 text-left">Ник</th>
+                <th className="p-3 text-left">Почта</th>
+                <th className="p-3 text-left">Роль</th>
+                <th className="p-3 text-left">Действия</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {Array.isArray(users) && users.length > 0 ? users.map(user => (
+                <tr key={user.id} className="border-b">
+                  <td className="p-3">{user.id}</td>
+                  <td className="p-3">{user.username}</td>
+                  <td className="p-3">{user.email}</td>
+                  <td className="p-3">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="p-3 flex gap-2">
+                    <select
+                      value={user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      className="border rounded px-2 py-1 text-sm"
+                    >
+                      <option value="user">user</option>
+                      <option value="admin">admin</option>
+                    </select>
+                    <button
+                      onClick={() => handleDeleteUser(user.id)}
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
+                    >
+                      Удалить
+                    </button>
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan="5" className="p-8 text-center text-gray-500">
+                    {users.length === 0 ? 'Нет пользователей' : 'Загрузка...'}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )
