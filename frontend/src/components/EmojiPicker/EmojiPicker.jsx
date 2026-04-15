@@ -43,12 +43,50 @@ export const EmojiPicker = memo(function EmojiPicker({ onSelect, onClose, positi
     'top-right': { top: '100%', right: 0, bottom: 'auto', left: 'auto' },
   }
 
+  // Проверка выхода за границы viewport — динамическое позиционирование
+  const [actualPosition, setActualPosition] = useState(position)
+  
+  useEffect(() => {
+    if (!ref.current) return
+    const rect = ref.current.getBoundingClientRect()
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    
+    let newPos = position
+    
+    // Если позиция top-right и панель выходит за правый край
+    if (position === 'top-right' && rect.right > viewportWidth) {
+      newPos = 'top-left'
+    }
+    // Если позиция bottom-left и панель выходит за левый край
+    if (position === 'bottom-left' && rect.left < 0) {
+      newPos = 'bottom-right'
+    }
+    // Если панель выходит за верхний край при top-* позиции
+    if (rect.top < 0 && position.startsWith('top')) {
+      newPos = position.replace('top', 'bottom')
+    }
+    // Если панель выходит за нижний край при bottom-* позиции
+    if (rect.bottom > viewportHeight && position.startsWith('bottom')) {
+      newPos = position.replace('bottom', 'top')
+    }
+    
+    setActualPosition(newPos)
+  }, [position])
+
+  const positionStylesWithFallback = {
+    'bottom-left': { bottom: 'calc(100% + 8px)', left: 0, right: 'auto' },
+    'bottom-right': { bottom: 'calc(100% + 8px)', right: 0, left: 'auto' },
+    'top-right': { top: '100%', right: 0, bottom: 'auto', left: 'auto' },
+    'top-left': { top: '100%', left: 0, bottom: 'auto', right: 'auto' },
+  }
+
   return (
     <div
       ref={ref}
       style={{
         position: 'absolute',
-        ...positionStyles[position],
+        ...positionStylesWithFallback[actualPosition],
         width: 320,
         background: 'var(--bg-surface)',
         border: '1px solid var(--border)',

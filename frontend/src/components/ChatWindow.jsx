@@ -77,18 +77,6 @@ function EmojiPicker({ onSelect, onClose }) {
     return () => document.removeEventListener('mousedown', h)
   }, [onClose])
 
-  // Прокрутка колесиком мыши вниз/вверх
-  useEffect(() => {
-    const el = ref.current?.querySelector('.emoji-grid')
-    if (!el) return
-    const handleWheel = (e) => {
-      e.preventDefault()
-      el.scrollTop += e.deltaY
-    }
-    el.addEventListener('wheel', handleWheel, { passive: false })
-    return () => el.removeEventListener('wheel', handleWheel)
-  }, [])
-
   return (
     <div ref={ref} style={{
       position:'absolute', bottom:'calc(100% + 8px)', left:0,
@@ -109,10 +97,10 @@ function EmojiPicker({ onSelect, onClose }) {
           </button>
         ))}
       </div>
-      {/* Сетка с вертикальной прокруткой */}
-      <div className="emoji-grid" style={{
+      {/* Сетка */}
+      <div style={{
         padding:8, display:'grid', gridTemplateColumns:'repeat(10, 1fr)', gap:2,
-        maxHeight:220, overflowY:'auto', overflowX:'hidden',
+        maxHeight:220, overflowY:'auto',
       }}>
         {EMOJI_TABS[tab].emojis.map((emoji, i) => (
           <button key={i} onClick={() => { onSelect(emoji); onClose() }} style={{
@@ -509,7 +497,7 @@ export default function ChatWindow() {
             >
               <Smile size={17}/>
             </button>
-            {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="top-right"/>}
+            {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)}/>}
           </div>
 
           {/* Ввод */}

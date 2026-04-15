@@ -59,24 +59,37 @@ router.get('/:id', authMiddleware, (req, res) => {
 
 router.put('/profile', authMiddleware, [
   body('username').optional().trim().isLength({ min: 2, max: 30 }),
-  body('status').optional().trim().isLength({ max: 120 })
+  body('status').optional().trim().isLength({ max: 120 }),
+  body('privacy_profile_visible').optional().isIn(['all', 'followers', 'nobody']),
+  body('privacy_posts_visible').optional().isIn(['all', 'followers', 'nobody'])
 ], (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
-    const { username, status } = req.body;
-    const updatedUser = User.updateProfile(req.user.id, { username, status });
+    const { username, status, privacy_profile_visible, privacy_posts_visible } = req.body;
+    const updatedUser = User.updateProfile(req.user.id, { username, status, privacy_profile_visible, privacy_posts_visible });
     res.json({ message: 'Профиль обновлён', user: updatedUser });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Ошибка сервера' }); }
 });
 
-router.post('/avatar', authMiddleware, uploadLimiter, handleAvatarUpload, validateAvatar, (req, res) => {
+// ─── PUT /users/privacy — обновить настройки приватности ─────────────────────
+router.put('/privacy', authMiddleware, [
+  body('privacy_profile_visible').optional().isIn(['all', 'followers', 'nobody']),
+  body('privacy_posts_visible').optional().isIn(['all', 'followers', 'nobody'])
+], (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'Файл не загружен' });
-    const avatarUrl   = `/uploads/avatars/${req.file.filename}`;
-    const updatedUser = User.updateProfile(req.user.id, { avatar: avatarUrl });
-    res.json({ message: 'Аватар загружен', avatar: avatarUrl, user: updatedUser });
-  } catch (err) { console.error(err); res.status(500).json({ error: err.message || 'Ошибка сервера' }); }
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    const { privacy_profile_visible, privacy_posts_visible } = req.body;
+    const updatedUser = User.updateProfile(req.user.id, { privacy_profile_visible, privacy_posts_visible });
+    res.json({
+      message: 'Настройки приватности сохранены',
+      privacy_settings: {
+        profile_visible: updatedUser.privacy_profile_visible,
+        posts_visible: updatedUser.privacy_posts_visible
+      }
+    });
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Ошибка сервера' }); }
 });
 
 module.exports = router;

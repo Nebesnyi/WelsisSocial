@@ -15,7 +15,7 @@ class User {
 
   static getById(id) {
     return getOne(
-      `SELECT id, email, username, avatar, status, last_seen, created_at
+      `SELECT id, email, username, avatar, status, last_seen, created_at, privacy_profile_visible, privacy_posts_visible
        FROM users WHERE id = ?`,
       [id]
     );
@@ -36,6 +36,8 @@ class User {
     if (data.username !== undefined) { fields.push('username = ?'); values.push(data.username); }
     if (data.avatar !== undefined)   { fields.push('avatar = ?');   values.push(data.avatar); }
     if (data.status !== undefined)   { fields.push('status = ?');   values.push(data.status); }
+    if (data.privacy_profile_visible !== undefined) { fields.push('privacy_profile_visible = ?'); values.push(data.privacy_profile_visible); }
+    if (data.privacy_posts_visible !== undefined)   { fields.push('privacy_posts_visible = ?');   values.push(data.privacy_posts_visible); }
 
     if (fields.length === 0) return this.getById(userId);
 

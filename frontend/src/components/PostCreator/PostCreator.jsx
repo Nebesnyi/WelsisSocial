@@ -79,7 +79,20 @@ export const PostCreator = memo(function PostCreator({ user, onCreate, onError }
         if (content.trim()) fd.append('content', content.trim())
         if (imageFile) fd.append('image', imageFile)
 
-        await onCreate(fd)
+        // Retry-логика: до 3 попыток с экспоненциальной задержкой
+        let attempts = 0
+        let success = false
+        while (attempts < 3 && !success) {
+          try {
+            await onCreate(fd)
+            success = true
+          } catch (err) {
+            attempts++
+            if (attempts >= 3) throw err
+            await new Promise(r => setTimeout(r, Math.pow(2, attempts) * 100))
+          }
+        }
+        
         setContent('')
         removeImage()
         if (textareaRef.current) textareaRef.current.style.height = 'auto'

@@ -37,7 +37,9 @@ function initializeDatabase() {
       status TEXT DEFAULT 'online',
       last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      privacy_profile_visible TEXT DEFAULT 'all',
+      privacy_posts_visible TEXT DEFAULT 'all'
     );
 
     CREATE TABLE IF NOT EXISTS chats (
@@ -175,6 +177,9 @@ function initializeDatabase() {
     // users: last_seen / updated_at
     ['users', 'last_seen',   'DATETIME DEFAULT CURRENT_TIMESTAMP'],
     ['users', 'updated_at',  'DATETIME DEFAULT CURRENT_TIMESTAMP'],
+    // users: privacy settings (БАГ 6: настройки приватности)
+    ['users', 'privacy_profile_visible', "TEXT DEFAULT 'all'"],
+    ['users', 'privacy_posts_visible',   "TEXT DEFAULT 'all'"],
   ];
 
   for (const [table, column, definition] of migrations) {
