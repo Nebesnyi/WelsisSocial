@@ -726,3 +726,222 @@ body.sidebar-collapsed .app-shell-main {
   transition: background var(--transition);
 }
 .post-image-remove:hover { background: rgba(239,68,68,0.8); }
+
+/* ══════════════════════════════════════════════════════════════
+   STARFIELD BACKGROUND — космический эффект
+══════════════════════════════════════════════════════════════ */
+[data-theme="dark"] body {
+  position: relative;
+  overflow-x: hidden;
+}
+
+[data-theme="dark"] body::before {
+  /* Звёздное небо — слой 1: мелкие звёзды */
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.8), transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.9), transparent),
+    radial-gradient(2px 2px at 160px 120px, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 230px 80px, rgba(255,255,255,0.8), transparent);
+  background-size: 250px 150px;
+  animation: twinkle 8s infinite linear;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+[data-theme="dark"] body::after {
+  /* Слой 2: неоновая дымка/туманность */
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse at 20% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: nebula 20s ease-in-out infinite alternate;
+}
+
+/* Мерцание звёзд */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.8; }
+}
+
+/* Плавное движение туманности */
+@keyframes nebula {
+  0% { 
+    background-position: 0% 50%, 100% 50%, 50% 50%;
+    transform: scale(1);
+  }
+  100% { 
+    background-position: 100% 50%, 0% 50%, 50% 50%;
+    transform: scale(1.05);
+  }
+}
+
+/* Падающие звёзды (редкие, для вау-эффекта) */
+[data-theme="dark"] .shooting-star {
+  position: fixed;
+  top: -100px;
+  left: 50%;
+  width: 2px;
+  height: 60px;
+  background: linear-gradient(to bottom, transparent, rgba(255,255,255,0.9), transparent);
+  border-radius: 0 0 2px 2px;
+  animation: shoot 4s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+}
+
+[data-theme="dark"] .shooting-star::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px 2px rgba(255,255,255,0.6);
+}
+
+@keyframes shoot {
+  0% {
+    transform: translateY(-100px) rotate(215deg) translateX(0);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(215deg) translateX(-200px);
+    opacity: 0;
+  }
+}
+/* БАЗА (общая) */
+.shooting-star {
+  position: absolute;
+  top: 0;
+  pointer-events: none;
+}
+
+/* 🌙 ТЁМНАЯ ТЕМА (оставь свою или пример) */
+.dark .shooting-star {
+  width: 2px;
+  height: 80px;
+  background: linear-gradient(white, transparent);
+  opacity: 0.8;
+  animation: fall 6s linear infinite;
+}
+
+@keyframes fall {
+  0% {
+    transform: translateY(-100px) translateX(0);
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  100% {
+    transform: translateY(100vh) translateX(-200px);
+    opacity: 0;
+  }
+}
+
+body {
+  position: relative;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LIGHT THEME COSMOS — движущийся градиент + видимые точки
+   Тёмная тема НЕ затрагивается. Работает поверх .app-shell
+══════════════════════════════════════════════════════════════ */
+
+html:not([data-theme="dark"]) .app-shell::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  will-change: background-position;
+  
+  /* Светлый космический градиент */
+  background: linear-gradient(
+    125deg,
+    #f8fafc 0%,
+    #e0e7ff 25%,
+    #f3e8ff 50%,
+    #e0f2fe 75%,
+    #f8fafc 100%
+  );
+  background-size: 300% 300%;
+  animation: light-gradient-move 22s ease infinite;
+}
+
+html:not([data-theme="dark"]) .app-shell::after {
+  content: "";
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  will-change: transform, opacity;
+  
+  /* Чёткие, но мягкие звёздочки (увеличены для видимости) */
+  background-image:
+    radial-gradient(1.5px 1.5px at 20% 30%, rgba(99, 102, 241, 0.55) 0%, transparent 100%),
+    radial-gradient(2px 2px at 50% 70%, rgba(56, 189, 248, 0.45) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 20%, rgba(168, 85, 247, 0.50) 0%, transparent 100%),
+    radial-gradient(1.2px 1.2px at 30% 85%, rgba(34, 211, 238, 0.40) 0%, transparent 100%),
+    radial-gradient(2px 2px at 65% 45%, rgba(236, 72, 153, 0.35) 0%, transparent 100%);
+    
+  background-size: 180px 180px;
+  background-repeat: repeat;
+  opacity: 0.75;
+  animation: light-stars-drift 45s linear infinite;
+}
+
+@keyframes light-gradient-move {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes light-stars-drift {
+  0%   { transform: translate(0, 0); opacity: 0.65; }
+  50%  { transform: translate(-25px, 18px); opacity: 0.9; }
+  100% { transform: translate(-50px, 36px); opacity: 0.65; }
+}
+/* ══════════════════════════════════════════════════════════════
+   FIX: Правая часть растягивается на весь оставшийся экран
+   (Компенсирует fixed-сайдбар, не ломает тёмную тему и фон)
+══════════════════════════════════════════════════════════════ */
+.app-shell {
+  width: 100%;
+  max-width: none;
+}
+
+.app-shell-main {
+  width: calc(100% - 240px);
+  margin-left: 240px;
+  flex: none;          /* Убираем flex:1, так как сайдбар не занимает место в потоке */
+  min-width: 0;
+}
+
+.app-shell-content {
+  width: 100%;
+  max-width: none;
+}
+
+/* Адаптив: при свёрнутом сайдбаре (64px) */
+body.sidebar-collapsed .app-shell-main {
+  width: calc(100% - 64px) !important;
+  margin-left: 64px !important;
+}
+
+/* Адаптив: мобильная нижняя панель (56px) */
+@media (max-width: 560px) {
+  .app-shell-main {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+}

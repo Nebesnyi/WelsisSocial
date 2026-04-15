@@ -41,25 +41,32 @@ function PublicRoute({ children }) {
 
 export default function App() {
   const withShell = (component) => <PrivateRoute><AppShell>{component}</AppShell></PrivateRoute>
-  return (
-    <Routes>
-      <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-      <Route path="/chats"    element={<Navigate to="/messages" />} />
-      <Route path="/messages" element={withShell(<ChatList />)} />
-      <Route path="/chat/:id" element={withShell(<ChatWindow />)} />
-      <Route path="/profile"  element={withShell(<Profile />)} />
-      <Route path="/users/:id" element={withShell(<UserProfileView />)} />
-      <Route path="/feed"     element={withShell(<Feed />)} />
-      <Route path="/friends"  element={withShell(<FriendsPage />)} />
-      <Route path="/people"   element={<Navigate to="/friends" />} />
-      <Route path="/games"    element={withShell(<GamesPage />)} />
-      <Route path="/groups"   element={withShell(<GroupsPage />)} />
-      <Route path="/media"    element={withShell(<MediaPage />)} />
-      <Route path="/settings" element={withShell(<SettingsPage />)} />
-      <Route path="/roadmap"  element={withShell(<RoadmapPage />)} />
-      <Route path="/admin"    element={withShell(<AdminPanel />)} />
-      <Route path="/"         element={<Navigate to="/messages" />} />
-    </Routes>
-  )
+return (
+    <div className="app-shell">
+      {/* ⭐ Звёзды */}
+      <div className="shooting-star" style={{ left: '20%', animationDelay: '0s' }} />
+      <div className="shooting-star" style={{ left: '60%', animationDelay: '2.5s' }} />
+      <div className="shooting-star" style={{ left: '85%', animationDelay: '5s' }} />
+
+      {/* 🚀 Роуты */}
+      <Routes>
+        <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+        <Route path="/chats"    element={<Navigate to="/messages" />} />
+        <Route path="/messages" element={withShell(<ChatList />)} />
+        <Route path="/chat/:id" element={withShell(<ChatWindow />)} />
+        <Route path="/profile"  element={withShell(<Profile />)} />
+        <Route path="/users/:id" element={withShell(<UserProfileView />)} />
+        <Route path="/feed"     element={withShell(<Feed />)} />
+        <Route path="/friends"  element={withShell(<FriendsPage />)} />
+        <Route path="/people"   element={<Navigate to="/friends" />} />
+        <Route path="/games"    element={withShell(<GamesPage />)} />
+        <Route path="/groups"   element={withShell(<GroupsPage />)} />
+        <Route path="/media"    element={withShell(<MediaPage />)} />
+        <Route path="/settings" element={withShell(<SettingsPage />)} />
+        <Route path="/roadmap"  element={withShell(<RoadmapPage />)} />
+        <Route path="/"         element={<Navigate to="/messages" />} />
+      </Routes>
+    </div>
+  );
 }
