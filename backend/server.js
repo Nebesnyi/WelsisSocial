@@ -27,6 +27,7 @@ const messageRoutes = require('./routes/messages');
 const postRoutes = require('./routes/posts');
 const followRoutes = require('./routes/follows');
 const notificationRoutes = require('./routes/notifications');
+const adminRoutes = require('./routes/admin');
 const Notification = require('./models/Notification');
 
 const app = express();
@@ -109,6 +110,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/follows', followRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

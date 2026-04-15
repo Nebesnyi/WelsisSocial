@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Moon, Sun, MoreHorizontal, User, LogOut, Pencil, Settings, Zap } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Moon, Sun, MoreHorizontal, User, LogOut, Pencil, Settings, Zap, Shield } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import api from '../../services/api'
@@ -87,6 +87,11 @@ export default function LeftSidebar() {
         <div className="profile-dropdown animate-fade-in">
           <button onClick={() => { navigate('/profile'); setMenuOpen(false) }}><User size={14}/>Профиль</button>
           <button onClick={() => { navigate('/profile'); setMenuOpen(false) }}><Pencil size={14}/>Редактировать</button>
+          {user?.is_admin && (
+            <button onClick={() => { navigate('/admin'); setMenuOpen(false) }}>
+              <Shield size={14}/>Админ-панель
+            </button>
+          )}
           <button className="danger" onClick={() => { logout(); setMenuOpen(false) }}><LogOut size={14}/>Выйти</button>
         </div>
       )}

@@ -15,7 +15,7 @@ class User {
 
   static getById(id) {
     return getOne(
-      `SELECT id, email, username, avatar, status, last_seen, created_at, privacy_profile_visible, privacy_posts_visible
+      `SELECT id, email, username, avatar, status, last_seen, created_at, privacy_profile_visible, privacy_posts_visible, is_verified, is_admin
        FROM users WHERE id = ?`,
       [id]
     );

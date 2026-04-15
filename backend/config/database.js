@@ -39,7 +39,9 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       privacy_profile_visible TEXT DEFAULT 'all',
-      privacy_posts_visible TEXT DEFAULT 'all'
+      privacy_posts_visible TEXT DEFAULT 'all',
+      is_verified INTEGER DEFAULT 0,
+      is_admin INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS chats (
@@ -180,6 +182,9 @@ function initializeDatabase() {
     // users: privacy settings (БАГ 6: настройки приватности)
     ['users', 'privacy_profile_visible', "TEXT DEFAULT 'all'"],
     ['users', 'privacy_posts_visible',   "TEXT DEFAULT 'all'"],
+    // users: verification & admin flags
+    ['users', 'is_verified', 'INTEGER DEFAULT 0'],
+    ['users', 'is_admin',    'INTEGER DEFAULT 0'],
   ];
 
   for (const [table, column, definition] of migrations) {
