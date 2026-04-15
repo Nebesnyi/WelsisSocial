@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Edit, X, Search, MessageCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { getSocket } from '../services/socket'
-import { formatLastSeen } from '../utils/formatTime'
 import api from '../services/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -98,7 +97,7 @@ export default function ChatList() {
   }
 
   function updateOnline(userId, online) {
-    setChats(prev => prev.map(c => String(c.other_user_id) === String(userId) ? { ...c, online, other_status: online ? 'online' : 'offline' } : c))
+    setChats(prev => prev.map(c => String(c.other_user_id) === String(userId) ? { ...c, online } : c))
   }
 
   async function handleSearch(q) {
@@ -184,7 +183,7 @@ export default function ChatList() {
                     <div>
                       <p style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{u.username}</p>
                       <p style={{ fontSize: 12, color: u.status === 'online' ? 'var(--status-online)' : 'var(--text-muted)' }}>
-                        {formatLastSeen(u.status, u.last_seen, false)}
+                        {u.status === 'online' ? 'онлайн' : 'офлайн'}
                       </p>
                     </div>
                   </button>
@@ -217,9 +216,6 @@ export default function ChatList() {
             const name = chat.name || chat.other_members || 'Чат'
             const isOnline = chat.type === 'private' && chat.online === true
             const preview = getPreview(chat)
-            const lastSeenText = chat.type === 'private' && chat.other_last_seen
-              ? formatLastSeen(chat.other_status, chat.other_last_seen, false)
-              : null
             return (
               <Link
                 key={chat.id}
@@ -255,7 +251,7 @@ export default function ChatList() {
                     </span>
                   </div>
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {lastSeenText || preview || <em style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Нет сообщений</em>}
+                    {preview || <em style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Нет сообщений</em>}
                   </p>
                 </div>
                 {chat.unread_count > 0 && (

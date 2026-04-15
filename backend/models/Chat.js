@@ -88,8 +88,6 @@ class Chat {
           WHERE cm2.chat_id = c.id AND cm2.user_id != ? LIMIT 1) AS other_user_id,
          (SELECT u.status FROM chat_members cm2 JOIN users u ON cm2.user_id = u.id
           WHERE cm2.chat_id = c.id AND cm2.user_id != ? LIMIT 1) AS other_status,
-         (SELECT u.last_seen FROM chat_members cm2 JOIN users u ON cm2.user_id = u.id
-          WHERE cm2.chat_id = c.id AND cm2.user_id != ? LIMIT 1) AS other_last_seen,
          (SELECT GROUP_CONCAT(u.username, ', ')
           FROM chat_members cm2 JOIN users u ON cm2.user_id = u.id
           WHERE cm2.chat_id = c.id AND cm2.user_id != ?) AS other_members,
@@ -100,7 +98,7 @@ class Chat {
        LEFT JOIN last_message lm ON lm.chat_id = c.id
        ORDER BY lm.created_at DESC, c.updated_at DESC
        LIMIT ? OFFSET ?`,
-      [userId, userId, userId, userId, userId, userId, userId, limit, offset]
+      [userId, userId, userId, userId, userId, userId, limit, offset]
     );
   }
 
