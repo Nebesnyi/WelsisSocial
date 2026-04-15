@@ -1,15 +1,14 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
-const adminMiddleware = require('../middleware/admin');
 
 const router = express.Router();
 
 /**
  * GET /api/admin/users
- * Получить список всех пользователей (только админ)
+ * Получить список всех пользователей (доступно всем)
  */
-router.get('/users', adminMiddleware, (req, res) => {
+router.get('/users', (req, res) => {
   try {
     const users = require('../config/database').getAll(
       `SELECT id, email, username, avatar, status, role, last_seen, created_at 
@@ -26,7 +25,7 @@ router.get('/users', adminMiddleware, (req, res) => {
  * PUT /api/admin/users/:id/role
  * Изменить роль пользователя (только админ)
  */
-router.put('/users/:id/role', adminMiddleware, [
+router.put('/users/:id/role', [
   body('role').isIn(['user', 'admin']).withMessage('Роль должна быть user или admin')
 ], (req, res) => {
   try {
@@ -63,7 +62,7 @@ router.put('/users/:id/role', adminMiddleware, [
  * DELETE /api/admin/users/:id
  * Удалить пользователя (только админ)
  */
-router.delete('/users/:id', adminMiddleware, (req, res) => {
+router.delete('/users/:id', (req, res) => {
   try {
     const userId = parseInt(req.params.id);
 
@@ -93,9 +92,9 @@ router.delete('/users/:id', adminMiddleware, (req, res) => {
 
 /**
  * GET /api/admin/stats
- * Получить статистику платформы (только админ)
+ * Получить статистику платформы (доступно всем)
  */
-router.get('/stats', adminMiddleware, (req, res) => {
+router.get('/stats', (req, res) => {
   try {
     const db = require('../config/database');
     

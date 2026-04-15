@@ -15,6 +15,7 @@ import MediaPage from './components/pages/MediaPage'
 import SettingsPage from './components/pages/SettingsPage'
 import UserProfileView from './components/pages/UserProfileView'
 import RoadmapPage from './components/pages/RoadmapPage'
+import AdminPanel from './components/pages/AdminPanel'
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth()
@@ -57,6 +58,7 @@ export default function App() {
       <Route path="/media"    element={withShell(<MediaPage />)} />
       <Route path="/settings" element={withShell(<SettingsPage />)} />
       <Route path="/roadmap"  element={withShell(<RoadmapPage />)} />
+      <Route path="/admin"    element={withShell(<AdminPanel />)} />
       <Route path="/"         element={<Navigate to="/messages" />} />
     </Routes>
   )
