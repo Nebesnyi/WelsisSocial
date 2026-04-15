@@ -41,11 +41,6 @@ router.put('/users/:id/badge', [
       return res.status(400).json({ error: 'Некорректный ID пользователя' });
     }
 
-    // Защита от изменения самого себя
-    if (userId === req.user.id) {
-      return res.status(400).json({ error: 'Нельзя изменить бейдж самого себя' });
-    }
-
     const user = User.getById(userId);
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
