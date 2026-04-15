@@ -1,159 +1,286 @@
-import React, { useState, useEffect } from 'react'
-import axios from 'axios'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Users, Shield, Trash2, Edit2, Save, X, AlertCircle, ChevronLeft, Search } from 'lucide-react'
+import api from '../../services/api'
 
-const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState('stats')
-  const [stats, setStats] = useState(null)
+export default function AdminPanel() {
+  const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState('users')
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  
+  // Для редактирования роли
+  const [editingUserId, setEditingUserId] = useState(null)
+  const [tempRole, setTempRole] = useState('user')
 
   useEffect(() => {
-    fetchAdminData()
-  }, [activeTab])
+    loadUsers()
+  }, [])
 
-  const fetchAdminData = async () => {
-    setLoading(true)
-    setError(null)
+  useEffect(() => {
+    if (error || successMsg) {
+      const timer = setTimeout(() => {
+        setError('')
+        setSuccessMsg('')
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [error, successMsg])
+
+  async function loadUsers() {
     try {
-      const token = localStorage.getItem('token')
-      const config = { headers: { Authorization: `Bearer ${token}` } }
-
-      if (activeTab === 'stats') {
-        const res = await axios.get('/api/admin/stats', config)
-        setStats(res.data)
-      } else if (activeTab === 'users') {
-        const res = await axios.get('/api/admin/users', config)
-        setUsers(Array.isArray(res.data) ? res.data : (res.data.users || []))
+      setLoading(true)
+      setError('')
+      const res = await api.get('/admin/users')
+      
+      // Надежное извлечение массива пользователей
+      let userList = []
+      if (Array.isArray(res.data)) {
+        userList = res.data
+      } else if (res.data && Array.isArray(res.data.users)) {
+        userList = res.data.users
+      } else if (res.data && Array.isArray(res.data.data)) {
+        userList = res.data.data
+      } else {
+        console.warn('Неожиданный формат ответа:', res.data)
+        userList = []
+      }
+      
+      setUsers(userList)
+      if (userList.length === 0) {
+        setSuccessMsg('Пользователи не найдены')
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Ошибка загрузки данных')
+      console.error('Ошибка загрузки пользователей:', err)
+      const msg = err?.response?.data?.error || err?.message || 'Не удалось загрузить пользователей'
+      setError(msg)
+      setUsers([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleRoleChange = async (userId, newRole) => {
+  async function handleRoleChange(userId, newRole) {
     try {
-      const token = localStorage.getItem('token')
-      await axios.put(`/api/admin/users/${userId}/role`, { role: newRole }, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      alert('Роль изменена')
-      fetchAdminData()
+      await api.patch(`/admin/users/${userId}/role`, { role: newRole })
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
+      setEditingUserId(null)
+      setSuccessMsg('Роль успешно изменена')
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка изменения роли')
+      setError(err?.response?.data?.error || 'Ошибка при изменении роли')
     }
   }
 
-  const handleDeleteUser = async (userId) => {
-    if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) return
+  async function handleDeleteUser(userId) {
+    if (!window.confirm('Вы уверены, что хотите удалить этого пользователя? Это действие необратимо.')) return
+    
     try {
-      const token = localStorage.getItem('token')
-      await axios.delete(`/api/admin/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      alert('Пользователь удален')
-      fetchAdminData()
+      await api.delete(`/admin/users/${userId}`)
+      setUsers(prev => prev.filter(u => u.id !== userId))
+      setSuccessMsg('Пользователь удален')
     } catch (err) {
-      alert(err.response?.data?.message || 'Ошибка удаления')
+      setError(err?.response?.data?.error || 'Ошибка при удалении пользователя')
     }
   }
+
+  const filteredUsers = users.filter(u => 
+    u.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Админ-панель</h1>
-
-      <div className="flex gap-4 mb-6 border-b">
-        <button
-          className={`pb-2 px-4 ${activeTab === 'stats' ? 'border-b-2 border-blue-500 font-semibold' : ''}`}
-          onClick={() => setActiveTab('stats')}
-        >
-          Статистика
-        </button>
-        <button
-          className={`pb-2 px-4 ${activeTab === 'users' ? 'border-b-2 border-blue-500 font-semibold' : ''}`}
-          onClick={() => setActiveTab('users')}
-        >
-          Пользователи
-        </button>
-      </div>
-
-      {loading && <p>Загрузка...</p>}
-      {error && <p className="text-red-500">{error}</p>}
-
-      {!loading && !error && activeTab === 'stats' && stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold">Всего пользователей</h3>
-            <p className="text-3xl">{stats.totalUsers}</p>
-          </div>
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold">Всего постов</h3>
-            <p className="text-3xl">{stats.totalPosts}</p>
-          </div>
-          <div className="bg-white p-4 rounded shadow">
-            <h3 className="text-lg font-semibold">Администраторы</h3>
-            <p className="text-3xl">{stats.adminCount}</p>
+    <div style={{ minHeight:'100dvh', background:'var(--bg-app)', padding:'20px 16px' }}>
+      <div style={{ maxWidth:1200, margin:'0 auto' }}>
+        
+        {/* Заголовок */}
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:24 }}>
+          <button onClick={() => navigate('/')} className="btn-icon" title="На главную">
+            <ChevronLeft size={20}/>
+          </button>
+          <div style={{ flex:1 }}>
+            <h1 style={{ fontSize:24, fontWeight:700, color:'var(--text-primary)' }}>Админ-панель</h1>
+            <p style={{ fontSize:14, color:'var(--text-muted)', marginTop:4 }}>Управление пользователями и настройками</p>
           </div>
         </div>
-      )}
 
-      {!loading && !error && activeTab === 'users' && (
-        <div className="overflow-x-auto">
-          <table className="w-full bg-white rounded shadow">
-            <thead>
-              <tr className="border-b">
-                <th className="p-3 text-left">ID</th>
-                <th className="p-3 text-left">Ник</th>
-                <th className="p-3 text-left">Почта</th>
-                <th className="p-3 text-left">Роль</th>
-                <th className="p-3 text-left">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.isArray(users) && users.length > 0 ? users.map(user => (
-                <tr key={user.id} className="border-b">
-                  <td className="p-3">{user.id}</td>
-                  <td className="p-3">{user.username}</td>
-                  <td className="p-3">{user.email}</td>
-                  <td className="p-3">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="p-3 flex gap-2">
-                    <select
-                      value={user.role}
-                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                      className="border rounded px-2 py-1 text-sm"
-                    >
-                      <option value="user">user</option>
-                      <option value="admin">admin</option>
-                    </select>
-                    <button
-                      onClick={() => handleDeleteUser(user.id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm"
-                    >
-                      Удалить
-                    </button>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan="5" className="p-8 text-center text-gray-500">
-                    {users.length === 0 ? 'Нет пользователей' : 'Загрузка...'}
-                  </td>
-                </tr>
+        {/* Вкладки */}
+        <div style={{ display:'flex', gap:8, marginBottom:24, borderBottom:'1px solid var(--border)', paddingBottom:1 }}>
+          <button
+            onClick={() => setActiveTab('users')}
+            style={{
+              display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:14, fontWeight:500,
+              color: activeTab === 'users' ? 'var(--accent)' : 'var(--text-muted)',
+              background: activeTab === 'users' ? 'rgba(109, 94, 245, 0.08)' : 'transparent',
+              border:'none', borderRadius:'8px 8px 0 0', cursor:'pointer', transition:'all 0.2s'
+            }}
+          >
+            <Users size={16}/> Пользователи
+          </button>
+          <button
+            onClick={() => setActiveTab('settings')}
+            style={{
+              display:'flex', alignItems:'center', gap:8, padding:'10px 16px', fontSize:14, fontWeight:500,
+              color: activeTab === 'settings' ? 'var(--accent)' : 'var(--text-muted)',
+              background: activeTab === 'settings' ? 'rgba(109, 94, 245, 0.08)' : 'transparent',
+              border:'none', borderRadius:'8px 8px 0 0', cursor:'pointer', transition:'all 0.2s'
+            }}
+          >
+            <Shield size={16}/> Настройки
+          </button>
+        </div>
+
+        {/* Контент */}
+        <div style={{ background:'var(--bg-surface)', borderRadius:'var(--radius-md)', border:'1px solid var(--border)', overflow:'hidden' }}>
+          
+          {activeTab === 'users' && (
+            <>
+              {/* Поиск */}
+              <div style={{ padding:'16px', borderBottom:'1px solid var(--border)', display:'flex', gap:12 }}>
+                <div style={{ position:'relative', flex:1, maxWidth:400 }}>
+                  <Search size={16} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)' }}/>
+                  <input
+                    type="text"
+                    placeholder="Поиск по имени или email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      width:'100%', padding:'8px 12px 8px 36px', fontSize:14,
+                      background:'var(--bg-input)', border:'1px solid var(--border)',
+                      borderRadius:'var(--radius-sm)', color:'var(--text-primary)', outline:'none'
+                    }}
+                  />
+                </div>
+                <button onClick={loadUsers} className="btn btn-secondary" style={{ padding:'8px 16px', fontSize:13 }}>
+                  Обновить
+                </button>
+              </div>
+
+              {/* Сообщения об ошибках/успехе */}
+              {error && (
+                <div style={{ padding:'12px 16px', background:'rgba(239,68,68,0.08)', borderBottom:'1px solid rgba(239,68,68,0.2)', display:'flex', alignItems:'center', gap:8 }}>
+                  <AlertCircle size={16} style={{ color:'#ef4444', flexShrink:0 }}/>
+                  <span style={{ fontSize:13, color:'#ef4444' }}>{error}</span>
+                  <button onClick={() => setError('')} style={{ marginLeft:'auto', background:'none', border:'none', cursor:'pointer', color:'#ef4444' }}><X size={14}/></button>
+                </div>
               )}
-            </tbody>
-          </table>
+              
+              {successMsg && !error && (
+                <div style={{ padding:'12px 16px', background:'rgba(34,197,94,0.08)', borderBottom:'1px solid rgba(34,197,94,0.2)', display:'flex', alignItems:'center', gap:8 }}>
+                  <Shield size={16} style={{ color:'#22c55e', flexShrink:0 }}/>
+                  <span style={{ fontSize:13, color:'#22c55e' }}>{successMsg}</span>
+                  <button onClick={() => setSuccessMsg('')} style={{ marginLeft:'auto', background:'none', border:'none', cursor:'pointer', color:'#22c55e' }}><X size={14}/></button>
+                </div>
+              )}
+
+              {/* Таблица пользователей */}
+              {loading ? (
+                <div style={{ padding:40, textAlign:'center' }}>
+                  <div style={{ width:32, height:32, border:'2px solid var(--border)', borderTopColor:'var(--accent)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/>
+                  <p style={{ fontSize:14, color:'var(--text-muted)', marginTop:12 }}>Загрузка пользователей...</p>
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>
+                  <Users size={48} style={{ opacity:0.3, marginBottom:12 }}/>
+                  <p style={{ fontSize:15, fontWeight:500 }}>Нет пользователей</p>
+                  <p style={{ fontSize:13, marginTop:4 }}>
+                    {searchQuery ? 'По вашему запросу ничего не найдено' : 'Список пользователей пуст'}
+                  </p>
+                </div>
+              ) : (
+                <div style={{ overflowX:'auto' }}>
+                  <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                    <thead>
+                      <tr style={{ background:'var(--bg-surface-2)', borderBottom:'1px solid var(--border)' }}>
+                        <th style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Пользователь</th>
+                        <th style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Email</th>
+                        <th style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Роль</th>
+                        <th style={{ padding:'12px 16px', textAlign:'left', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Статус</th>
+                        <th style={{ padding:'12px 16px', textAlign:'right', fontSize:12, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredUsers.map((user, index) => (
+                        <tr key={user.id} style={{ borderBottom: index < filteredUsers.length - 1 ? '1px solid var(--border-light)' : 'none' }}>
+                          <td style={{ padding:'12px 16px' }}>
+                            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                              <div style={{ width:32, height:32, borderRadius:'50%', background:'var(--accent)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, fontWeight:600, color:'#fff' }}>
+                                {user.username?.[0]?.toUpperCase() || 'U'}
+                              </div>
+                              <span style={{ fontSize:14, fontWeight:500, color:'var(--text-primary)' }}>{user.username}</span>
+                            </div>
+                          </td>
+                          <td style={{ padding:'12px 16px', fontSize:13, color:'var(--text-muted)' }}>{user.email}</td>
+                          <td style={{ padding:'12px 16px' }}>
+                            {editingUserId === user.id ? (
+                              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                                <select
+                                  value={tempRole}
+                                  onChange={(e) => setTempRole(e.target.value)}
+                                  style={{
+                                    padding:'4px 8px', fontSize:12, borderRadius:4,
+                                    background:'var(--bg-input)', border:'1px solid var(--border)',
+                                    color:'var(--text-primary)', outline:'none'
+                                  }}
+                                >
+                                  <option value="user">Пользователь</option>
+                                  <option value="admin">Администратор</option>
+                                </select>
+                                <button onClick={() => handleRoleChange(user.id, tempRole)} className="btn-icon" style={{ width:28, height:28 }}><Save size={14}/></button>
+                                <button onClick={() => setEditingUserId(null)} className="btn-icon" style={{ width:28, height:28 }}><X size={14}/></button>
+                              </div>
+                            ) : (
+                              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                                <span style={{
+                                  fontSize:12, padding:'4px 8px', borderRadius:12, fontWeight:500,
+                                  background: user.role === 'admin' ? 'rgba(109, 94, 245, 0.12)' : 'rgba(100, 116, 139, 0.12)',
+                                  color: user.role === 'admin' ? 'var(--accent)' : 'var(--text-muted)'
+                                }}>
+                                  {user.role === 'admin' ? 'Администратор' : 'Пользователь'}
+                                </span>
+                                <button onClick={() => { setEditingUserId(user.id); setTempRole(user.role) }} className="btn-icon" style={{ width:28, height:28, opacity:0.6 }}><Edit2 size={14}/></button>
+                              </div>
+                            )}
+                          </td>
+                          <td style={{ padding:'12px 16px' }}>
+                            <span style={{
+                              fontSize:12, padding:'4px 8px', borderRadius:12, fontWeight:500,
+                              background: 'rgba(34, 197, 94, 0.12)',
+                              color: '#22c55e'
+                            }}>
+                              Активен
+                            </span>
+                          </td>
+                          <td style={{ padding:'12px 16px', textAlign:'right' }}>
+                            <button 
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="btn-icon"
+                              style={{ width:32, height:32, color:'#ef4444', opacity:0.7 }}
+                              title="Удалить пользователя"
+                            >
+                              <Trash2 size={16}/>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'settings' && (
+            <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>
+              <Shield size={48} style={{ opacity:0.3, marginBottom:12 }}/>
+              <p style={{ fontSize:15, fontWeight:500 }}>Настройки в разработке</p>
+              <p style={{ fontSize:13, marginTop:4 }}>Этот раздел будет доступен в будущих обновлениях</p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
-
-export default AdminPanel
