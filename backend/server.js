@@ -92,7 +92,13 @@ app.use(express.urlencoded({ extended: true }));
 // Global rate limiter - применяется ко всем запросам
 const { apiLimiter } = require('./middleware/rateLimiter');
 app.use('/api', apiLimiter);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+
+// Static files with CORS headers - важно для загрузки аватарок и других файлов
+app.use('/uploads', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+}, express.static(path.join(__dirname, 'uploads'), {
   dotfiles: 'deny',
   index: false,
   maxAge: '1d'
