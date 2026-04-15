@@ -104,7 +104,7 @@ function createUploadDirectories() {
 // ─── REST routes ──────────────────────────────────────────────────────────────
 
 app.use('/api/auth', authRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/admin', authMiddleware, adminRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);

@@ -1,15 +1,11 @@
 ```
+# Database files
+*.sqlite
+*.db
+*.db-journal
+
 # Dependencies
 node_modules/
-
-# Database files
-*.sqlite-shm
-*.sqlite-wal
-
-# Build artifacts
-build/
-dist/
-target/
 
 # Logs and temp files
 *.log
@@ -30,4 +26,18 @@ __pycache__/
 *.pyo
 *.pyd
 .Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.DS_Store
 ```
