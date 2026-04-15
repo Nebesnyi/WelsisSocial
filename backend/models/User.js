@@ -15,7 +15,7 @@ class User {
 
   static getById(id) {
     return getOne(
-      `SELECT id, email, username, avatar, status, last_seen, created_at, role
+      `SELECT id, email, username, avatar, status, last_seen, created_at, role, is_blocked
        FROM users WHERE id = ?`,
       [id]
     );
@@ -60,6 +60,17 @@ class User {
     run(
       `UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
       [role, userId]
+    );
+    return this.getById(userId);
+  }
+
+  /**
+   * Заблокировать/разблокировать пользователя
+   */
+  static setBlocked(userId, blocked) {
+    run(
+      `UPDATE users SET is_blocked = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [blocked ? 1 : 0, userId]
     );
     return this.getById(userId);
   }
