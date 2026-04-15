@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, UserPlus, UserMinus } from 'lucide-react'
+import { formatLastSeen } from '../utils/formatTime'
 import api from '../services/api'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -27,8 +28,8 @@ export default function People() {
       await Promise.all(users.map(async u => {
         try {
           const s = await api.get(`/follows/${u.id}/status`)
-          statuses[u.id] = s.data.following
-        } catch { statuses[u.id] = false }
+          statuses[u.id] = { following: s.data.following, lastSeen: u.last_seen, status: u.status }
+        } catch { statuses[u.id] = { following: false, lastSeen: u.last_seen, status: u.status } }
       }))
       setFollowingMap(statuses)
     } catch { setError('Ошибка поиска пользователей') }
@@ -36,9 +37,9 @@ export default function People() {
 
   async function toggleFollow(userId) {
     try {
-      if (followingMap[userId]) await api.delete(`/follows/${userId}`)
+      if (followingMap[userId]?.following) await api.delete(`/follows/${userId}`)
       else await api.post(`/follows/${userId}`)
-      setFollowingMap(prev => ({ ...prev, [userId]: !prev[userId] }))
+      setFollowingMap(prev => ({ ...prev, [userId]: { ...prev[userId], following: !prev[userId]?.following } }))
     } catch { /* silent */ }
   }
 
@@ -61,6 +62,9 @@ export default function People() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {people.map(p => {
           const bg = colors[(p.username?.charCodeAt(0) || 0) % colors.length]
+          const statusData = followingMap[p.id] || {}
+          const isFollowing = statusData.following || false
+          const lastSeenText = formatLastSeen(statusData.status, statusData.lastSeen, false)
           return (
             <div key={p.id} className="card" style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
@@ -76,14 +80,19 @@ export default function People() {
                     : p.username?.[0]?.toUpperCase()
                   }
                 </div>
-                <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{p.username}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-primary)' }}>{p.username}</span>
+                  <span style={{ fontSize: 11, color: statusData.status === 'online' ? 'var(--status-online)' : 'var(--text-muted)' }}>
+                    {lastSeenText}
+                  </span>
+                </div>
               </button>
               <button
-                className={followingMap[p.id] ? 'btn btn-secondary' : 'btn btn-primary'}
+                className={isFollowing ? 'btn btn-secondary' : 'btn btn-primary'}
                 style={{ padding: '7px 12px', fontSize: 12, gap: 5 }}
                 onClick={() => toggleFollow(p.id)}
               >
-                {followingMap[p.id] ? <><UserMinus size={13} /> Отписаться</> : <><UserPlus size={13} /> Подписаться</>}
+                {isFollowing ? <><UserMinus size={13} /> Отписаться</> : <><UserPlus size={13} /> Подписаться</>}
               </button>
             </div>
           )
