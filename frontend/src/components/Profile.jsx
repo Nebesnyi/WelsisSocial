@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, Check, X, LogOut, Edit2, Mail, User, Heart, MessageCircle } from 'lucide-react'
+import { Camera, Check, X, LogOut, Edit2, Mail, User, Heart, MessageCircle, Briefcase, GraduationCap, MapPin, Phone, Globe, Calendar, Link as LinkIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../services/api'
 
@@ -12,7 +12,20 @@ export default function Profile() {
   const { user, updateUser, logout } = useAuth()
   const navigate = useNavigate()
 
-  const [username, setUsername]   = useState(user?.username || '')
+  const [formData, setFormData] = useState({
+    username: user?.username || '',
+    first_name: user?.first_name || '',
+    last_name: user?.last_name || '',
+    birth_date: user?.birth_date || '',
+    city: user?.city || '',
+    about: user?.about || '',
+    occupation: user?.occupation || '',
+    education: user?.education || '',
+    location: user?.location || '',
+    phone: user?.phone || '',
+    social_links: user?.social_links || {},
+    interests: user?.interests || []
+  })
   const [loading, setLoading]     = useState(false)
   const [msg, setMsg]             = useState('')
   const [editing, setEditing]     = useState(false)
@@ -20,14 +33,44 @@ export default function Profile() {
   const [posts, setPosts]         = useState([])
   const [postsLoading, setPostsLoading] = useState(true)
   const [followStats, setFollowStats]   = useState({ followersCount: 0, followingCount: 0 })
+  const [interestInput, setInterestInput] = useState('')
+  const [newSocialLink, setNewSocialLink] = useState({ platform: '', url: '' })
+
+  useEffect(() => { if (user) loadData() }, [user?.id])
+  
+  // Load full profile data when editing starts
+  useEffect(() => {
+    if (editing && user?.id) {
+      loadFullProfile()
+    }
+  }, [editing])
+
+  async function loadFullProfile() {
+    try {
+      const r = await api.get(`/users/${user.id}`)
+      const u = r.data.user
+      setFormData({
+        username: u.username || '',
+        first_name: u.first_name || '',
+        last_name: u.last_name || '',
+        birth_date: u.birth_date || '',
+        city: u.city || '',
+        about: u.about || '',
+        occupation: u.occupation || '',
+        education: u.education || '',
+        location: u.location || '',
+        phone: u.phone || '',
+        social_links: u.social_links || {},
+        interests: u.interests || []
+      })
+    } catch (err) { console.error(err) }
+  }
 
   useEffect(() => {
     if (!msg) return
     const t = setTimeout(() => setMsg(''), 3000)
     return () => clearTimeout(t)
   }, [msg])
-
-  useEffect(() => { if (user) loadData() }, [user?.id])
 
   async function loadData() {
     setPostsLoading(true)
@@ -49,12 +92,45 @@ export default function Profile() {
     e.preventDefault()
     setLoading(true); setMsg('')
     try {
-      const r = await api.put('/users/profile', { username })
+      const r = await api.put('/users/profile', formData)
       updateUser(r.data.user)
       setMsg('ok')
       setEditing(false)
     } catch { setMsg('err') }
     finally { setLoading(false) }
+  }
+
+  function addInterest() {
+    if (interestInput.trim() && !formData.interests.includes(interestInput.trim())) {
+      setFormData(prev => ({ ...prev, interests: [...prev.interests, interestInput.trim()] }))
+      setInterestInput('')
+    }
+  }
+
+  function removeInterest(idx) {
+    setFormData(prev => ({ ...prev, interests: prev.interests.filter((_, i) => i !== idx) }))
+  }
+
+  function addSocialLink() {
+    if (newSocialLink.platform && newSocialLink.url) {
+      setFormData(prev => ({ 
+        ...prev, 
+        social_links: { ...prev.social_links, [newSocialLink.platform]: newSocialLink.url } 
+      }))
+      setNewSocialLink({ platform: '', url: '' })
+    }
+  }
+
+  function removeSocialLink(platform) {
+    setFormData(prev => {
+      const updated = { ...prev.social_links }
+      delete updated[platform]
+      return { ...prev, social_links: updated }
+    })
+  }
+
+  function updateFormData(field, value) {
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
   async function handleAvatar(e) {
@@ -173,16 +249,158 @@ export default function Profile() {
         {editing && (
           <div className="card animate-fade-in" style={{ padding:20, marginBottom:20 }}>
             <h2 style={{ fontSize:15, fontWeight:600, color:'var(--text-primary)', marginBottom:16 }}>Редактировать профиль</h2>
-            <form onSubmit={handleSave} style={{ display:'flex', flexDirection:'column', gap:14 }}>
-              <div>
-                <label style={labelStyle}><Mail size={13} /> Email</label>
-                <input className="ui-input" type="email" value={user?.email || ''} disabled style={{ opacity:0.5 }} />
-              </div>
-              <div>
-                <label style={labelStyle}><User size={13} /> Имя пользователя</label>
-                <input className="ui-input" type="text" value={username} onChange={e => setUsername(e.target.value)} minLength={2} maxLength={30} />
-              </div>
-              <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+            <form onSubmit={handleSave} style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              
+              {/* Основная информация */}
+              <section>
+                <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
+                  <User size={14} /> Основная информация
+                </h3>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                  <div>
+                    <label style={labelStyle}>Имя</label>
+                    <input className="ui-input" type="text" value={formData.first_name} onChange={e => updateFormData('first_name', e.target.value)} maxLength={50} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Фамилия</label>
+                    <input className="ui-input" type="text" value={formData.last_name} onChange={e => updateFormData('last_name', e.target.value)} maxLength={50} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}><User size={13} /> Имя пользователя</label>
+                    <input className="ui-input" type="text" value={formData.username} onChange={e => updateFormData('username', e.target.value)} minLength={2} maxLength={30} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}><Calendar size={13} /> Дата рождения</label>
+                    <input className="ui-input" type="date" value={formData.birth_date} onChange={e => updateFormData('birth_date', e.target.value)} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}><MapPin size={13} /> Город</label>
+                    <input className="ui-input" type="text" value={formData.city} onChange={e => updateFormData('city', e.target.value)} maxLength={100} />
+                  </div>
+                </div>
+                <div style={{ marginTop:12 }}>
+                  <label style={labelStyle}>О себе</label>
+                  <textarea className="ui-input" value={formData.about} onChange={e => updateFormData('about', e.target.value)} maxLength={500} rows={3} placeholder="Расскажите о себе..." />
+                </div>
+              </section>
+
+              {/* Работа и образование */}
+              <section>
+                <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
+                  <Briefcase size={14} /> Работа и образование
+                </h3>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr', gap:12 }}>
+                  <div>
+                    <label style={labelStyle}><Briefcase size={13} /> Место работы / Должность</label>
+                    <input className="ui-input" type="text" value={formData.occupation} onChange={e => updateFormData('occupation', e.target.value)} maxLength={100} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}><GraduationCap size={13} /> Образование</label>
+                    <input className="ui-input" type="text" value={formData.education} onChange={e => updateFormData('education', e.target.value)} maxLength={500} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}><MapPin size={13} /> Местоположение</label>
+                    <input className="ui-input" type="text" value={formData.location} onChange={e => updateFormData('location', e.target.value)} maxLength={200} />
+                  </div>
+                </div>
+              </section>
+
+              {/* Контакты */}
+              <section>
+                <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
+                  <Phone size={14} /> Контакты
+                </h3>
+                <div>
+                  <label style={labelStyle}><Mail size={13} /> Email</label>
+                  <input className="ui-input" type="email" value={user?.email || ''} disabled style={{ opacity:0.5 }} />
+                </div>
+                <div style={{ marginTop:12 }}>
+                  <label style={labelStyle}><Phone size={13} /> Телефон</label>
+                  <input className="ui-input" type="tel" value={formData.phone} onChange={e => updateFormData('phone', e.target.value)} maxLength={20} placeholder="+7 (999) 000-00-00" />
+                </div>
+                
+                {/* Соцсети */}
+                <div style={{ marginTop:12 }}>
+                  <label style={labelStyle}><Globe size={13} /> Социальные сети</label>
+                  <div style={{ display:'flex', gap:8, marginTop:6 }}>
+                    <select 
+                      className="ui-input" 
+                      value={newSocialLink.platform} 
+                      onChange={e => setNewSocialLink(prev => ({ ...prev, platform: e.target.value }))}
+                      style={{ maxWidth:150 }}
+                    >
+                      <option value="">Выбрать...</option>
+                      <option value="telegram">Telegram</option>
+                      <option value="vk">VK</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="twitter">Twitter</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="linkedin">LinkedIn</option>
+                      <option value="github">GitHub</option>
+                      <option value="other">Другое</option>
+                    </select>
+                    <input 
+                      className="ui-input" 
+                      type="url" 
+                      placeholder="https://..." 
+                      value={newSocialLink.url} 
+                      onChange={e => setNewSocialLink(prev => ({ ...prev, url: e.target.value }))}
+                    />
+                    <button type="button" className="btn btn-primary" onClick={addSocialLink} style={{ padding:'8px 12px' }}>Добавить</button>
+                  </div>
+                  {Object.keys(formData.social_links).length > 0 && (
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:8 }}>
+                      {Object.entries(formData.social_links).map(([platform, url]) => (
+                        <span key={platform} style={{ 
+                          display:'inline-flex', alignItems:'center', gap:6, 
+                          padding:'4px 10px', borderRadius:'var(--radius-sm)', 
+                          background:'rgba(109, 94, 245, 0.1)', color:'var(--accent)', fontSize:12 
+                        }}>
+                          <LinkIcon size={12} />
+                          {platform}: {url.substring(0, 30)}{url.length > 30 ? '...' : ''}
+                          <button type="button" onClick={() => removeSocialLink(platform)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--accent)', padding:0 }}>
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Интересы */}
+              <section>
+                <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12 }}>Интересы</h3>
+                <div style={{ display:'flex', gap:8 }}>
+                  <input 
+                    className="ui-input" 
+                    type="text" 
+                    value={interestInput} 
+                    onChange={e => setInterestInput(e.target.value)} 
+                    placeholder="Добавить интерес"
+                    onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addInterest())}
+                  />
+                  <button type="button" className="btn btn-primary" onClick={addInterest} style={{ padding:'8px 16px' }}>Добавить</button>
+                </div>
+                {formData.interests.length > 0 && (
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:8 }}>
+                    {formData.interests.map((interest, idx) => (
+                      <span key={idx} style={{ 
+                        display:'inline-flex', alignItems:'center', gap:6, 
+                        padding:'4px 10px', borderRadius:'var(--radius-pill)', 
+                        background:'rgba(109, 94, 245, 0.1)', color:'var(--accent)', fontSize:12 
+                      }}>
+                        {interest}
+                        <button type="button" onClick={() => removeInterest(idx)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--accent)', padding:0 }}>
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <div style={{ display:'flex', gap:8, justifyContent:'flex-end', paddingTop:8, borderTop:'1px solid var(--border)' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setEditing(false)}>Отмена</button>
                 <button type="submit" className="btn btn-primary" disabled={loading}>
                   {loading ? 'Сохраняем...' : 'Сохранить'}
@@ -270,9 +488,87 @@ export default function Profile() {
         {/* Информация */}
         {activeTab === 'Информация' && (
           <div className="card" style={{ padding:20 }}>
-            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-              <InfoRow icon={<Mail size={15} />}  label="Email"  value={user?.email} />
-              <InfoRow icon={<User size={15} />}  label="Имя"    value={user?.username} />
+            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              {/* Основная информация */}
+              <section>
+                <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
+                  <User size={14} /> Основная информация
+                </h3>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                  <InfoRow icon={<User size={15} />} label="Имя" value={user?.first_name || '—'} />
+                  <InfoRow icon={<User size={15} />} label="Фамилия" value={user?.last_name || '—'} />
+                  <InfoRow icon={<User size={15} />} label="Имя пользователя" value={user?.username} />
+                  <InfoRow icon={<Calendar size={15} />} label="Дата рождения" value={user?.birth_date || '—'} />
+                  <InfoRow icon={<MapPin size={15} />} label="Город" value={user?.city || '—'} />
+                </div>
+                <div style={{ marginTop:12 }}>
+                  <InfoRow icon={<Mail size={15} />} label="Email" value={user?.email} />
+                </div>
+                {user?.about && (
+                  <div style={{ marginTop:12, paddingTop:12, borderTop:'1px solid var(--border)' }}>
+                    <span style={{ fontSize:13, color:'var(--text-muted)', display:'block', marginBottom:6 }}>О себе</span>
+                    <p style={{ fontSize:14, color:'var(--text-primary)', lineHeight:1.6 }}>{user.about}</p>
+                  </div>
+                )}
+              </section>
+
+              {/* Работа и образование */}
+              {(user?.occupation || user?.education || user?.location) && (
+                <section style={{ paddingTop:12, borderTop:'1px solid var(--border)' }}>
+                  <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
+                    <Briefcase size={14} /> Работа и образование
+                  </h3>
+                  <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                    {user?.occupation && <InfoRow icon={<Briefcase size={15} />} label="Работа" value={user.occupation} />}
+                    {user?.education && <InfoRow icon={<GraduationCap size={15} />} label="Образование" value={user.education} />}
+                    {user?.location && <InfoRow icon={<MapPin size={15} />} label="Местоположение" value={user.location} />}
+                  </div>
+                </section>
+              )}
+
+              {/* Контакты */}
+              {(user?.phone || (user?.social_links && Object.keys(user.social_links).length > 0)) && (
+                <section style={{ paddingTop:12, borderTop:'1px solid var(--border)' }}>
+                  <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12, display:'flex', alignItems:'center', gap:6 }}>
+                    <Phone size={14} /> Контакты
+                  </h3>
+                  <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                    {user?.phone && <InfoRow icon={<Phone size={15} />} label="Телефон" value={user.phone} />}
+                    {user?.social_links && Object.keys(user.social_links).length > 0 && (
+                      <div>
+                        <span style={{ fontSize:13, color:'var(--text-muted)', display:'block', marginBottom:6 }}>Соцсети</span>
+                        <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                          {Object.entries(user.social_links).map(([platform, url]) => (
+                            <a key={platform} href={url} target="_blank" rel="noopener noreferrer" 
+                               style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:13, color:'var(--accent)', textDecoration:'none' }}>
+                              <LinkIcon size={14} />
+                              {platform}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
+
+              {/* Интересы */}
+              {user?.interests && user.interests.length > 0 && (
+                <section style={{ paddingTop:12, borderTop:'1px solid var(--border)' }}>
+                  <h3 style={{ fontSize:14, fontWeight:600, color:'var(--text-primary)', marginBottom:12 }}>Интересы</h3>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                    {user.interests.map((interest, idx) => (
+                      <span key={idx} style={{ 
+                        display:'inline-flex', alignItems:'center', gap:6, 
+                        padding:'4px 10px', borderRadius:'var(--radius-pill)', 
+                        background:'rgba(109, 94, 245, 0.1)', color:'var(--accent)', fontSize:12 
+                      }}>
+                        {interest}
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           </div>
         )}

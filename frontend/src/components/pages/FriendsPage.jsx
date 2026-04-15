@@ -151,7 +151,7 @@ export default function FriendsPage() {
   return (
     <div style={{ minHeight: '100dvh', position: 'relative', zIndex: 1 }}>
       <header className="page-header">
-        <h1 className="page-title">Люди</h1>
+        <h1 className="page-title">Друзья</h1>
       </header>
 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px' }}>

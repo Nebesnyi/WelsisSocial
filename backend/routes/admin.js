@@ -41,6 +41,11 @@ router.put('/users/:id/role', [
       return res.status(400).json({ error: 'Некорректный ID пользователя' });
     }
 
+    // Защита от блокировки самого себя
+    if (userId === req.user.id) {
+      return res.status(400).json({ error: 'Нельзя изменить роль самого себя' });
+    }
+
     const user = User.getById(userId);
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
@@ -70,14 +75,14 @@ router.delete('/users/:id', (req, res) => {
       return res.status(400).json({ error: 'Некорректный ID пользователя' });
     }
 
+    // Защита от удаления самого себя
+    if (userId === req.user.id) {
+      return res.status(400).json({ error: 'Нельзя удалить самого себя' });
+    }
+
     const user = User.getById(userId);
     if (!user) {
       return res.status(404).json({ error: 'Пользователь не найден' });
-    }
-
-    // Нельзя удалить самого себя
-    if (userId === req.user.id) {
-      return res.status(400).json({ error: 'Нельзя удалить самого себя' });
     }
 
     const db = require('../config/database');

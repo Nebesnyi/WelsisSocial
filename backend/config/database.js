@@ -176,6 +176,18 @@ function initializeDatabase() {
     ['users', 'last_seen',   'DATETIME DEFAULT CURRENT_TIMESTAMP'],
     ['users', 'updated_at',  'DATETIME DEFAULT CURRENT_TIMESTAMP'],
     ['users', 'role',        "TEXT DEFAULT 'user' CHECK(role IN ('user', 'admin'))"],
+    // users: extended profile fields
+    ['users', 'interests',   'TEXT DEFAULT NULL'],
+    ['users', 'occupation',  'TEXT DEFAULT NULL'],
+    ['users', 'location',    'TEXT DEFAULT NULL'],
+    ['users', 'education',   'TEXT DEFAULT NULL'],
+    ['users', 'social_links','TEXT DEFAULT NULL'],
+    ['users', 'phone',       'TEXT DEFAULT NULL'],
+    ['users', 'first_name',  'TEXT DEFAULT NULL'],
+    ['users', 'last_name',   'TEXT DEFAULT NULL'],
+    ['users', 'birth_date',  'TEXT DEFAULT NULL'],
+    ['users', 'city',        'TEXT DEFAULT NULL'],
+    ['users', 'about',       'TEXT DEFAULT NULL'],
   ];
 
   for (const [table, column, definition] of migrations) {
