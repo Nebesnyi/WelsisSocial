@@ -176,6 +176,8 @@ function initializeDatabase() {
     ['users', 'last_seen',   'DATETIME DEFAULT CURRENT_TIMESTAMP'],
     ['users', 'updated_at',  'DATETIME DEFAULT CURRENT_TIMESTAMP'],
     ['users', 'role',        "TEXT DEFAULT 'user' CHECK(role IN ('user', 'admin'))"],
+    // users: is_blocked для блокировки пользователей
+    ['users', 'is_blocked',  'INTEGER DEFAULT 0'],
   ];
 
   for (const [table, column, definition] of migrations) {
