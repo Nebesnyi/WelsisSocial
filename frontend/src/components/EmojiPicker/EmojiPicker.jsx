@@ -10,7 +10,7 @@ const EMOJI_TABS = [
 
 const EMOJI_FONT_FAMILY = '"Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif'
 
-export const EmojiPicker = memo(function EmojiPicker({ onSelect, onClose }) {
+export const EmojiPicker = memo(function EmojiPicker({ onSelect, onClose, position = 'bottom-left' }) {
   const [tab, setTab] = useState(0)
   const ref = useRef(null)
 
@@ -25,13 +25,30 @@ export const EmojiPicker = memo(function EmojiPicker({ onSelect, onClose }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [handleClickOutside])
 
+  // Прокрутка колесиком мыши вниз/вверх
+  useEffect(() => {
+    const el = ref.current?.querySelector('.emoji-grid')
+    if (!el) return
+    const handleWheel = (e) => {
+      e.preventDefault()
+      el.scrollTop += e.deltaY
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [])
+
+  // Позиционирование: bottom-left (снизу слева), top-right (сверху справа)
+  const positionStyles = {
+    'bottom-left': { bottom: 'calc(100% + 8px)', left: 0, right: 'auto' },
+    'top-right': { top: '100%', right: 0, bottom: 'auto', left: 'auto' },
+  }
+
   return (
     <div
       ref={ref}
       style={{
         position: 'absolute',
-        bottom: 'calc(100% + 8px)',
-        left: 0,
+        ...positionStyles[position],
         width: 320,
         background: 'var(--bg-surface)',
         border: '1px solid var(--border)',
@@ -72,6 +89,7 @@ export const EmojiPicker = memo(function EmojiPicker({ onSelect, onClose }) {
         ))}
       </div>
       <div
+        className="emoji-grid"
         style={{
           padding: 8,
           display: 'grid',
@@ -79,6 +97,7 @@ export const EmojiPicker = memo(function EmojiPicker({ onSelect, onClose }) {
           gap: 2,
           maxHeight: 220,
           overflowY: 'auto',
+          overflowX: 'hidden',
         }}
         role="listbox"
         aria-label="Выбор эмодзи"
