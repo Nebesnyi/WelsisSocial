@@ -1,0 +1,121 @@
+const express = require('express');
+const { body, validationResult } = require('express-validator');
+const User = require('../models/User');
+const adminMiddleware = require('../middleware/admin');
+
+const router = express.Router();
+
+/**
+ * GET /api/admin/users
+ * Получить список всех пользователей (только админ)
+ */
+router.get('/users', adminMiddleware, (req, res) => {
+  try {
+    const users = require('../config/database').getAll(
+      `SELECT id, email, username, avatar, status, role, last_seen, created_at 
+       FROM users ORDER BY created_at DESC`
+    );
+    res.json({ users });
+  } catch (error) {
+    console.error('❌ admin getUsers:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * PUT /api/admin/users/:id/role
+ * Изменить роль пользователя (только админ)
+ */
+router.put('/users/:id/role', adminMiddleware, [
+  body('role').isIn(['user', 'admin']).withMessage('Роль должна быть user или admin')
+], (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const userId = parseInt(req.params.id);
+    const { role } = req.body;
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Некорректный ID пользователя' });
+    }
+
+    const user = User.getById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    const updatedUser = User.setRole(userId, role);
+    
+    res.json({
+      message: `Роль пользователя ${user.username} изменена на ${role}`,
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('❌ admin setRole:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * DELETE /api/admin/users/:id
+ * Удалить пользователя (только админ)
+ */
+router.delete('/users/:id', adminMiddleware, (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Некорректный ID пользователя' });
+    }
+
+    const user = User.getById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Пользователь не найден' });
+    }
+
+    // Нельзя удалить самого себя
+    if (userId === req.user.id) {
+      return res.status(400).json({ error: 'Нельзя удалить самого себя' });
+    }
+
+    const db = require('../config/database');
+    db.run(`DELETE FROM users WHERE id = ?`, [userId]);
+
+    res.json({ message: `Пользователь ${user.username} удалён` });
+  } catch (error) {
+    console.error('❌ admin deleteUser:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/stats
+ * Получить статистику платформы (только админ)
+ */
+router.get('/stats', adminMiddleware, (req, res) => {
+  try {
+    const db = require('../config/database');
+    
+    const totalUsers = db.getOne('SELECT COUNT(*) as count FROM users')?.count || 0;
+    const totalPosts = db.getOne('SELECT COUNT(*) as count FROM posts')?.count || 0;
+    const totalMessages = db.getOne('SELECT COUNT(*) as count FROM messages')?.count || 0;
+    const onlineUsers = db.getOne("SELECT COUNT(*) as count FROM users WHERE status = 'online'")?.count || 0;
+
+    res.json({
+      stats: {
+        totalUsers,
+        totalPosts,
+        totalMessages,
+        onlineUsers
+      }
+    });
+  } catch (error) {
+    console.error('❌ admin getStats:', error);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+
+module.exports = router;

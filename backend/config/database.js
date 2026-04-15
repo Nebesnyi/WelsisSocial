@@ -172,9 +172,10 @@ function initializeDatabase() {
     ['messages', 'file_url',  'TEXT DEFAULT NULL'],
     ['messages', 'file_type', 'TEXT DEFAULT NULL'],
     ['messages', 'file_name', 'TEXT DEFAULT NULL'],
-    // users: last_seen / updated_at
+    // users: last_seen / updated_at / role
     ['users', 'last_seen',   'DATETIME DEFAULT CURRENT_TIMESTAMP'],
     ['users', 'updated_at',  'DATETIME DEFAULT CURRENT_TIMESTAMP'],
+    ['users', 'role',        "TEXT DEFAULT 'user' CHECK(role IN ('user', 'admin'))"],
   ];
 
   for (const [table, column, definition] of migrations) {

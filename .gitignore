@@ -1,0 +1,12 @@
+```
+# Dependencies
+node_modules/
+
+# Database files
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite
+
+# Package lock files
+package-lock.json
+```
