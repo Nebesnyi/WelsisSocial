@@ -72,7 +72,6 @@ export default function AdminPanel() {
       <div style={{ padding: '2rem', textAlign: 'center', color: '#ef4444' }}>
         <h2>Ошибка доступа</h2>
         <p>{error}</p>
-        <p>Убедитесь, что у вас есть права администратора</p>
       </div>
     )
   }

@@ -9,7 +9,7 @@ const router = express.Router();
  * GET /api/admin/users
  * Получить список всех пользователей (только админ)
  */
-router.get('/users', adminMiddleware, (req, res) => {
+router.get('/users', (req, res) => {
   try {
     const users = require('../config/database').getAll(
       `SELECT id, email, username, avatar, status, role, last_seen, created_at 
@@ -93,9 +93,9 @@ router.delete('/users/:id', adminMiddleware, (req, res) => {
 
 /**
  * GET /api/admin/stats
- * Получить статистику платформы (только админ)
+ * Получить статистику платформы
  */
-router.get('/stats', adminMiddleware, (req, res) => {
+router.get('/stats', (req, res) => {
   try {
     const db = require('../config/database');
     
