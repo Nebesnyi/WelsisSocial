@@ -158,7 +158,7 @@ export const PostCreator = memo(function PostCreator({ user, onCreate, onError }
                 😊
               </button>
             </div>
-            {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="top-right" />}
+            {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="bottom-left" />}
           </div>
 
           {imagePreview && (

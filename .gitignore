@@ -1,37 +1,64 @@
 ```
 # Dependencies
 node_modules/
-venv/
-.venv/
-__pycache__/
 
 # Build artifacts
 dist/
 build/
-target/
+*.js.map
 
-# Environment variables
+# Environment
 .env
 .env.local
 *.env.*
 
-# IDE files
+# Editors
 .vscode/
 .idea/
 *.swp
 *.swo
-*.tmp
 
 # Logs
 *.log
 
-# OS files
-.DS_Store
-Thumbs.db
+# Temp files
+*.tmp
 
-# Python specific
+# Python
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# MyPy
+.mypy_cache/
+
+# PyTest
+.pytest_cache/
+
+# Distribution / packaging
 .Python
+*.egg-info/
+.eggs/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.vs/
+.recommenders
+.settings/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 ```

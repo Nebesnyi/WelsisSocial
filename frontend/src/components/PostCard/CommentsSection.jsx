@@ -176,7 +176,7 @@ export const CommentsSection = memo(function CommentsSection({ postId, commentsC
                   😊
                 </button>
               </div>
-              {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="top-right" />}
+              {showEmoji && <EmojiPicker onSelect={insertEmoji} onClose={() => setShowEmoji(false)} position="bottom-left" />}
             </div>
             <button
               type="submit"
