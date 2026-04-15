@@ -15,7 +15,7 @@ class User {
 
   static getById(id) {
     return getOne(
-      `SELECT id, email, username, avatar, status, last_seen, created_at
+      `SELECT id, email, username, avatar, status, last_seen, created_at, role
        FROM users WHERE id = ?`,
       [id]
     );
@@ -51,6 +51,17 @@ class User {
       `UPDATE users SET status = ?, last_seen = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
       [status, userId]
     );
+  }
+
+  /**
+   * Назначить роль пользователя
+   */
+  static setRole(userId, role) {
+    run(
+      `UPDATE users SET role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [role, userId]
+    );
+    return this.getById(userId);
   }
 
   /**
