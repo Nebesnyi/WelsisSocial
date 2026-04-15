@@ -28,7 +28,7 @@ function EmojiPickerInline({ onSelect, onClose }) {
 
   return (
     <div ref={ref} style={{
-      position:'absolute', bottom:'calc(100% + 8px)', left:0,
+      position:'absolute', bottom:'100%', marginBottom:8, left:0,
       width:320, background:'var(--bg-surface)',
       border:'1px solid var(--border)', borderRadius:'var(--radius-md)',
       boxShadow:'var(--shadow-lg)', zIndex:200, overflow:'hidden',
@@ -43,7 +43,7 @@ function EmojiPickerInline({ onSelect, onClose }) {
           }}>{t.label}</button>
         ))}
       </div>
-      <div style={{ padding:8, display:'grid', gridTemplateColumns:'repeat(10, 1fr)', gap:2, maxHeight:200, overflowY:'auto' }}>
+      <div style={{ padding:8, display:'grid', gridTemplateColumns:'repeat(10, 1fr)', gap:2, maxHeight:200, overflowY:'auto', overflowX:'hidden' }}>
         {EMOJI_TABS[tab].emojis.map((emoji, i) => (
           <button key={i} onClick={() => { onSelect(emoji); onClose() }} style={{
             fontSize:20, padding:'5px 2px', background:'transparent', border:'none',

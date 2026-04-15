@@ -100,7 +100,7 @@ function EmojiPicker({ onSelect, onClose }) {
       {/* Сетка */}
       <div style={{
         padding:8, display:'grid', gridTemplateColumns:'repeat(10, 1fr)', gap:2,
-        maxHeight:220, overflowY:'auto',
+        maxHeight:220, overflowY:'auto', overflowX:'hidden',
       }}>
         {EMOJI_TABS[tab].emojis.map((emoji, i) => (
           <button key={i} onClick={() => { onSelect(emoji); onClose() }} style={{
