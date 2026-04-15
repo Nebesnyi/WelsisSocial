@@ -65,7 +65,7 @@ export default function AdminPanel() {
 
   async function handleRoleChange(userId, newRole) {
     try {
-      await api.patch(`/admin/users/${userId}/role`, { role: newRole })
+      await api.put(`/admin/users/${userId}/role`, { role: newRole })
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
       setEditingUserId(null)
       setSuccessMsg('Роль успешно изменена')
