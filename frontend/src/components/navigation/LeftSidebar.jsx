@@ -94,6 +94,11 @@ export default function LeftSidebar() {
       {/* Навигация */}
       <nav className="sidebar-nav">
         {sidebarItems.map(item => {
+          // Показываем пункт меню только если это не admin-only или пользователь админ
+          if (item.adminOnly && user?.role !== 'admin') {
+            return null
+          }
+          
           const Icon   = item.icon
           const active = item.to === '/messages'
             ? location.pathname.startsWith('/chat') || location.pathname.startsWith('/messages')

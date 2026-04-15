@@ -7,6 +7,7 @@ import {
   Image,
   Settings,
   Map,
+  ShieldCheck,
 } from 'lucide-react'
 
 export const sidebarItems = [
@@ -17,5 +18,6 @@ export const sidebarItems = [
   { key: 'groups',   label: 'Группы',     to: '/groups',   icon: UsersRound },
   { key: 'media',    label: 'Медиа',      to: '/media',    icon: Image },
   { key: 'roadmap',  label: 'Roadmap',    to: '/roadmap',  icon: Map },
+  { key: 'admin',    label: 'Админ',      to: '/admin',    icon: ShieldCheck, adminOnly: true },
   { key: 'settings', label: 'Настройки',  to: '/settings', icon: Settings },
 ]
