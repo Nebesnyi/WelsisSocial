@@ -28,7 +28,10 @@ function EmojiPickerInline({ onSelect, onClose }) {
 
   return (
     <div ref={ref} style={{
-      position:'absolute', bottom:'100%', marginBottom:8, left:0,
+      position:'absolute', 
+      top: '100%', 
+      right: 0,
+      marginTop: 8,
       width:320, background:'var(--bg-surface)',
       border:'1px solid var(--border)', borderRadius:'var(--radius-md)',
       boxShadow:'var(--shadow-lg)', zIndex:200, overflow:'hidden',
