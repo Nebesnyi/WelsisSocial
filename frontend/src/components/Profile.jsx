@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, Check, X, LogOut, Edit2, Mail, User, Heart, MessageCircle, Briefcase, GraduationCap, MapPin, Phone, Globe, Link as LinkIcon } from 'lucide-react'
+import { Camera, Check, X, LogOut, Edit2, Mail, User, Heart, MessageCircle, Briefcase, GraduationCap, MapPin, Phone, Globe, Link as LinkIcon, Calendar } from 'lucide-react'
 import { toast } from 'react-toastify'
 import imageCompression from 'browser-image-compression'
 import { useAuth } from '../contexts/AuthContext'
