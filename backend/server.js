@@ -94,14 +94,20 @@ const { apiLimiter } = require('./middleware/rateLimiter');
 app.use('/api', apiLimiter);
 
 // Static files with CORS headers - важно для загрузки аватарок и других файлов
-app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  next();
-}, express.static(path.join(__dirname, 'uploads'), {
+// Используем отдельный CORS middleware для /uploads
+const uploadsCors = cors({
+  origin: allowedOrigins,
+  methods: ['GET', 'OPTIONS'],
+  credentials: false
+});
+app.use('/uploads', uploadsCors, express.static(path.join(__dirname, 'uploads'), {
   dotfiles: 'deny',
   index: false,
-  maxAge: '1d'
+  maxAge: '1d',
+  setHeaders: (res, path, stat) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
 }));
 
 // ─── Upload dirs ──────────────────────────────────────────────────────────────
