@@ -1,31 +1,18 @@
 ```
-# Environment variables
+# Dependencies
+node_modules/
+
+# Environment
 .env
 .env.local
 .env.*
 
-# Dependencies
-node_modules/
-
 # Logs
 *.log
 
-# Editor/IDE
-.vscode/
-.idea/
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.py~
-*.pyc~
-
-# Build outputs
-dist/
+# Build artifacts
 build/
-target/
+dist/
 *.o
 *.obj
 *.exe
@@ -33,6 +20,31 @@ target/
 *.so
 *.a
 *.out
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+coverage/
+htmlcov/
+.coverage
+
+# Temporary files
+*.tmp
 
 # Compressed files
 *.zip
@@ -53,8 +65,8 @@ target/
 *.Z
 *.lz
 *.lzo
-
-# System files
-.DS_Store
-Thumbs.db
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

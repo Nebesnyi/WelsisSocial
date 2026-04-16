@@ -195,7 +195,7 @@ io.on('connection', (socket) => {
   User.updateStatus(uid, 'online');
   io.emit('user:online', { userId: uid });
 
-  const userChats = Chat.getByUserId(uid);
+  const userChats = Chat.getByUserId(uid) || [];
   for (const chat of userChats) {
     socket.join(`chat:${chat.id}`);
   }
