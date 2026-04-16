@@ -50,37 +50,37 @@ function handleUpload(req, res, next) {
   });
 }
 
-router.get('/chat/:chatId', authMiddleware, (req, res) => {
+router.get('/chat/:chatId', authMiddleware, async (req, res) => {
   try {
     const { chatId } = req.params;
     const { limit, offset } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
-    const chat = Chat.getById(chatId);
+    const chat = await Chat.getById(chatId);
     if (!chat) return res.status(404).json({ error: 'Чат не найден' });
-    const members = Chat.getMembers(chatId);
+    const members = await Chat.getMembers(chatId);
     if (!members.some(m => m.id === req.user.id)) return res.status(403).json({ error: 'Доступ запрещён' });
-    const messages = Message.getByChatId(chatId, limit, offset);
-    const total    = Message.countByChatId(chatId);
-    Message.markAsRead(chatId, req.user.id);
+    const messages = await Message.getByChatId(chatId, limit, offset);
+    const total    = await Message.countByChatId(chatId);
+    await Message.markAsRead(chatId, req.user.id);
     res.json({ messages, meta: paginationMeta({ limit, offset, total }) });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Ошибка сервера' }); }
 });
 
 router.post('/', authMiddleware, uploadLimiter, handleUpload, validateMessageFile,
   [body('content').optional({ values: 'falsy' }).trim().isLength({ max: 5000 })],
-  (req, res) => {
+  async (req, res) => {
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
       const { chatId, content } = req.body;
       if (!chatId) return res.status(400).json({ error: 'chatId обязателен' });
-      const chat = Chat.getById(chatId);
+      const chat = await Chat.getById(chatId);
       if (!chat) return res.status(404).json({ error: 'Чат не найден' });
-      const members = Chat.getMembers(chatId);
+      const members = await Chat.getMembers(chatId);
       if (!members.some(m => m.id === req.user.id)) return res.status(403).json({ error: 'Доступ запрещён' });
       if (!content && !req.file) return res.status(400).json({ error: 'Сообщение не может быть пустым' });
       let fileData = null;
       if (req.file) fileData = { url: `/uploads/messages/${req.file.filename}`, type: req.file.detectedMime || req.file.mimetype, name: req.file.originalname };
-      const message = Message.create(chatId, req.user.id, content || null, fileData);
+      const message = await Message.create(chatId, req.user.id, content || null, fileData);
       message.username = req.user.username;
       message.avatar   = req.user.avatar;
       res.status(201).json({ message });
@@ -88,16 +88,16 @@ router.post('/', authMiddleware, uploadLimiter, handleUpload, validateMessageFil
   }
 );
 
-router.delete('/:id', authMiddleware, (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const message = Message.getById(req.params.id);
+    const message = await Message.getById(req.params.id);
     if (!message) return res.status(404).json({ error: 'Сообщение не найдено' });
     if (message.user_id !== req.user.id) return res.status(403).json({ error: 'Можно удалить только свои сообщения' });
     if (message.file_url) {
       const filePath = path.join(ROOT_UPLOADS, 'messages', path.basename(message.file_url));
       if (fs.existsSync(filePath)) fsPromises.unlink(filePath).catch(() => {});
     }
-    Message.delete(req.params.id);
+    await Message.delete(req.params.id);
     res.json({ message: 'Сообщение удалено', deletedMessageId: parseInt(req.params.id) });
   } catch (err) { console.error(err); res.status(500).json({ error: 'Ошибка сервера' }); }
 });

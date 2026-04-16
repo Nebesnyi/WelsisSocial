@@ -41,6 +41,7 @@ async function getAll(query, values = []) {
 async function run(sql, params = []) {
   try {
     const result = await pool.query(sql, params);
+    // Для PostgreSQL RETURNING id возвращает массив строк
     return {
       lastInsertRowid: result.rows[0]?.id || null,
       changes: result.rowCount
