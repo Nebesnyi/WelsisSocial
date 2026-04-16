@@ -2,18 +2,18 @@ const { getOne, getAll, run } = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 class User {
-  static create(email, password, username) {
+  static async create(email, password, username) {
     const passwordHash = bcrypt.hashSync(password, 10);
-    const { lastInsertRowid } = run(
-      `INSERT INTO users (email, password_hash, username) VALUES (?, ?, ?)`,
+    const result = await run(
+      `INSERT INTO users (email, password_hash, username) VALUES ($1, $2, $3) RETURNING id`,
       [email, passwordHash, username]
     );
-    const user = this.getById(lastInsertRowid);
+    const user = await this.getById(result.lastInsertRowid);
     console.log('🆔 Новый пользователь:', user?.id);
     return user;
   }
 
-  static getById(id) {
+  static async getById(id) {
     return getOne(
       `SELECT id, email, username, avatar, status, last_seen, created_at, role,
               interests, occupation, location, education, social_links, phone,
@@ -23,86 +23,92 @@ class User {
     );
   }
 
-  static getByEmail(email) {
+  static async getByEmail(email) {
     return getOne(`SELECT * FROM users WHERE email = $1`, [email]);
   }
 
   static verifyPassword(user, password) {
+    // Проверка на случай если хеша нет
+    if (!user || !user.password_hash) return false;
     return bcrypt.compareSync(password, user.password_hash);
   }
 
-  static updateProfile(userId, data) {
+  static async updateProfile(userId, data) {
     const fields = [];
     const values = [];
+    let paramIndex = 1;
 
-    if (data.username !== undefined) { fields.push('username = $' + (values.length + 1)); values.push(data.username); }
-    if (data.avatar !== undefined)   { fields.push('avatar = $' + (values.length + 1));   values.push(data.avatar); }
-    if (data.status !== undefined)   { fields.push('status = $' + (values.length + 1));   values.push(data.status); }
-    if (data.interests !== undefined) { fields.push('interests = $' + (values.length + 1)); values.push(JSON.stringify(data.interests)); }
-    if (data.occupation !== undefined) { fields.push('occupation = $' + (values.length + 1)); values.push(data.occupation); }
-    if (data.location !== undefined) { fields.push('location = $' + (values.length + 1)); values.push(data.location); }
-    if (data.education !== undefined) { fields.push('education = $' + (values.length + 1)); values.push(data.education); }
-    if (data.social_links !== undefined) { fields.push('social_links = $' + (values.length + 1)); values.push(JSON.stringify(data.social_links)); }
-    if (data.phone !== undefined) { fields.push('phone = $' + (values.length + 1)); values.push(data.phone); }
-    if (data.first_name !== undefined) { fields.push('first_name = $' + (values.length + 1)); values.push(data.first_name); }
-    if (data.last_name !== undefined) { fields.push('last_name = $' + (values.length + 1)); values.push(data.last_name); }
-    if (data.birth_date !== undefined) { fields.push('birth_date = $' + (values.length + 1)); values.push(data.birth_date); }
-    if (data.city !== undefined) { fields.push('city = $' + (values.length + 1)); values.push(data.city); }
-    if (data.about !== undefined) { fields.push('about = $' + (values.length + 1)); values.push(data.about); }
+    const addField = (key, value, isJson = false) => {
+      if (value !== undefined) {
+        fields.push(`${key} = $${paramIndex}`);
+        values.push(isJson ? JSON.stringify(value) : value);
+        paramIndex++;
+      }
+    };
 
-    if (fields.length === 0) return this.getById(userId);
+    addField('username', data.username);
+    addField('avatar', data.avatar);
+    addField('status', data.status);
+    addField('interests', data.interests, true);
+    addField('occupation', data.occupation);
+    addField('location', data.location);
+    addField('education', data.education);
+    addField('social_links', data.social_links, true);
+    addField('phone', data.phone);
+    addField('first_name', data.first_name);
+    addField('last_name', data.last_name);
+    addField('birth_date', data.birth_date);
+    addField('city', data.city);
+    addField('about', data.about);
 
-    fields.push('updated_at = CURRENT_TIMESTAMP');
+    if (fields.length === 0) return await this.getById(userId);
+
+    fields.push('updated_at = NOW()');
     values.push(userId);
 
-    run(`UPDATE users SET ${fields.join(', ')} WHERE id = $${values.length}`, values);
-    return this.getById(userId);
+    await run(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = $${paramIndex}`,
+      values
+    );
+    
+    return await this.getById(userId);
   }
 
-  static updateStatus(userId, status) {
-    run(
-      `UPDATE users SET status = $1, last_seen = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+  static async updateStatus(userId, status) {
+    await run(
+      `UPDATE users SET status = $1, last_seen = NOW(), updated_at = NOW() WHERE id = $2`,
       [status, userId]
     );
   }
 
-  /**
-   * Назначить роль пользователя
-   */
-  static setRole(userId, role) {
-    run(
-      `UPDATE users SET role = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+  static async setRole(userId, role) {
+    await run(
+      `UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2`,
       [role, userId]
     );
-    return this.getById(userId);
+    return await this.getById(userId);
   }
 
-  /**
-   * Поиск с пагинацией.
-   * [FIX] Добавлены limit/offset — без них при большой базе
-   * возвращались все совпадения без ограничений.
-   */
-  static search(query, excludeUserId, limit = 20, offset = 0) {
+  static async search(query, excludeUserId, limit = 20, offset = 0) {
     const pattern = `%${query}%`;
     return getAll(
       `SELECT id, username, avatar, status, last_seen, first_name, last_name, city, occupation
        FROM users
-       WHERE id != $1 AND (username LIKE $2 OR email LIKE $3 OR first_name LIKE $4 OR last_name LIKE $5)
+       WHERE id != $1 AND (username ILIKE $2 OR email ILIKE $3 OR first_name ILIKE $4 OR last_name ILIKE $5)
        ORDER BY username ASC
        LIMIT $6 OFFSET $7`,
       [excludeUserId, pattern, pattern, pattern, pattern, limit, offset]
     );
   }
 
-  /** Количество результатов поиска — для meta.total */
-  static countSearch(query, excludeUserId) {
+  static async countSearch(query, excludeUserId) {
     const pattern = `%${query}%`;
-    const r = getOne(
+    const r = await getOne(
       `SELECT COUNT(*) as n FROM users
-       WHERE id != $1 AND (username LIKE $2 OR email LIKE $3)`,
+       WHERE id != $1 AND (username ILIKE $2 OR email ILIKE $3)`,
       [excludeUserId, pattern, pattern]
     );
-    return r?.n ?? 0;
+    return parseInt(r?.n) || 0;
   }
 }
 

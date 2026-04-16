@@ -8,13 +8,13 @@ const router = express.Router();
 
 /**
  * POST /api/auth/register
- * [FIX] registerLimiter: 5 попыток за 15 минут с одного IP
  */
+// POST /register
 router.post('/register', registerLimiter, [
   body('email').isEmail().normalizeEmail().withMessage('Некорректный email'),
   body('password').isLength({ min: 6 }).withMessage('Пароль должен быть не менее 6 символов'),
   body('username').trim().isLength({ min: 2, max: 30 }).withMessage('Имя от 2 до 30 символов')
-], (req, res) => {
+], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -23,12 +23,12 @@ router.post('/register', registerLimiter, [
 
     const { email, password, username } = req.body;
 
-    const existingUser = User.getByEmail(email);
+    const existingUser = await User.getByEmail(email);
     if (existingUser) {
       return res.status(400).json({ error: 'Пользователь с таким email уже существует' });
     }
 
-    const user = User.create(email, password, username);
+    const user = await User.create(email, password, username);
     if (!user?.id) {
       return res.status(500).json({ error: 'Ошибка создания пользователя' });
     }
@@ -46,14 +46,11 @@ router.post('/register', registerLimiter, [
   }
 });
 
-/**
- * POST /api/auth/login
- * [FIX] loginLimiter: 10 попыток за 15 минут с одного IP
- */
+// POST /login
 router.post('/login', loginLimiter, [
   body('email').isEmail().normalizeEmail().withMessage('Некорректный email'),
   body('password').notEmpty().withMessage('Введите пароль')
-], (req, res) => {
+], async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -62,13 +59,13 @@ router.post('/login', loginLimiter, [
 
     const { email, password } = req.body;
 
-    const user = User.getByEmail(email);
+    const user = await User.getByEmail(email);
     if (!user || !User.verifyPassword(user, password)) {
       return res.status(401).json({ error: 'Неверный email или пароль' });
     }
 
     const token = generateToken(user.id);
-    User.updateStatus(user.id, 'online');
+    await User.updateStatus(user.id, 'online');
 
     res.json({
       message: 'Вход успешен',
@@ -80,7 +77,6 @@ router.post('/login', loginLimiter, [
     res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
-
 /**
  * GET /api/auth/me
  */

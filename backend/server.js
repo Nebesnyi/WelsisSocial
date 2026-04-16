@@ -21,10 +21,10 @@ const Chat = require('./models/Chat');
 const User = require('./models/User');
 
 const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/users');
-const chatRoutes = require('./routes/chats');
-const messageRoutes = require('./routes/messages');
 const postRoutes = require('./routes/posts');
+const chatRoutes = require('./routes/chats');
+const userRoutes = require('./routes/users');
+const messageRoutes = require('./routes/messages');
 const followRoutes = require('./routes/follows');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
@@ -125,11 +125,11 @@ function createUploadDirectories() {
 // ─── REST routes ──────────────────────────────────────────────────────────────
 
 app.use('/api/auth', authRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api/chats', chatRoutes);
 app.use('/api/admin', authMiddleware, adminRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/chats', chatRoutes);
 app.use('/api/messages', messageRoutes);
-app.use('/api/posts', postRoutes);
 app.use('/api/follows', followRoutes);
 app.use('/api/notifications', notificationRoutes);
 

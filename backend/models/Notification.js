@@ -1,10 +1,8 @@
 const { getOne, getAll, run } = require('../config/database');
 
 class Notification {
-  static create(userId, actorId, type, entityId = null, entityType = null) {
-    // Don't notify yourself
+  static async create(userId, actorId, type, entityId = null, entityType = null) {
     if (userId === actorId) return null;
-    // Deduplicate: no duplicate like/follow notifications
     if (type === 'like' || type === 'follow') {
       const exists = getOne(
         `SELECT id FROM notifications WHERE user_id=$1 AND actor_id=$2 AND type=$3 AND entity_id=$4`,
@@ -12,12 +10,12 @@ class Notification {
       );
       if (exists) return exists;
     }
-    const { lastInsertRowid } = run(
+    const result = await run(
       `INSERT INTO notifications (user_id, actor_id, type, entity_id, entity_type)
-       VALUES ($1, $2, $3, $4, $5)`,
+      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
       [userId, actorId, type, entityId, entityType]
     );
-    return this.getById(lastInsertRowid);
+    return this.getById(result.lastInsertRowid);
   }
 
   static getById(id) {

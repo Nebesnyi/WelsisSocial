@@ -1,37 +1,39 @@
 const { getOne, getAll, run } = require('../config/database');
 
 class Chat {
-  static createPrivate(user1Id, user2Id) {
+  static async createPrivate(user1Id, user2Id) {
     const existing = getOne(
       `SELECT c.id FROM chats c
-       JOIN chat_members cm1 ON c.id = cm1.chat_id
-       JOIN chat_members cm2 ON c.id = cm2.chat_id
-       WHERE c.type = 'private' AND cm1.user_id = $1 AND cm2.user_id = $2`,
+      JOIN chat_members cm1 ON c.id = cm1.chat_id
+      JOIN chat_members cm2 ON c.id = cm2.chat_id
+      WHERE c.type = 'private' AND cm1.user_id = $1 AND cm2.user_id = $2`,
       [user1Id, user2Id]
     );
     if (existing) return this.getById(existing.id);
 
-    const { lastInsertRowid: chatId } = run(`INSERT INTO chats (type) VALUES ('private') RETURNING id`);
+    const result = await run(`INSERT INTO chats (type) VALUES ('private') RETURNING id`);
+    const chatId = result.lastInsertRowid;
     if (!chatId) { console.error('❌ Не удалось создать чат'); return null; }
 
-    run(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)`, [chatId, user1Id]);
-    run(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)`, [chatId, user2Id]);
+    await run(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)`, [chatId, user1Id]);
+    await run(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)`, [chatId, user2Id]);
 
     return this.getById(chatId);
   }
 
-  static createGroup(name, ownerUserId, memberUserIds) {
-    const { lastInsertRowid: chatId } = run(
+  static async createGroup(name, ownerUserId, memberUserIds) {
+    const result = await run(
       `INSERT INTO chats (name, type) VALUES ($1, 'group') RETURNING id`,
       [name]
     );
+    const chatId = result.lastInsertRowid;
     if (!chatId) { console.error('❌ Не удалось создать группу'); return null; }
 
-    run(`INSERT INTO chat_members (chat_id, user_id, role) VALUES ($1, $2, 'owner')`, [chatId, ownerUserId]);
+    await run(`INSERT INTO chat_members (chat_id, user_id, role) VALUES ($1, $2, 'owner')`, [chatId, ownerUserId]);
 
     for (const userId of memberUserIds) {
       if (userId !== ownerUserId) {
-        run(`INSERT INTO chat_members (chat_id, user_id, role) VALUES ($1, $2, 'member')`, [chatId, userId]);
+        await run(`INSERT INTO chat_members (chat_id, user_id, role) VALUES ($1, $2, 'member')`, [chatId, userId]);
       }
     }
 
