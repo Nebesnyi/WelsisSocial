@@ -1,30 +1,37 @@
 const { getOne, getAll, run } = require('../config/database');
 
 class Post {
-  static create(userId, content, imageUrl = null) {
-    const { lastInsertRowid } = run(
+  static async create(userId, content, imageUrl = null) {
+    const result = await run(
       `INSERT INTO posts (user_id, content, image_url) VALUES ($1, $2, $3) RETURNING id`,
       [userId, content, imageUrl]
     );
-    return this.getById(lastInsertRowid);
+    return await this.getById(result.lastInsertRowid);
   }
 
-  static getById(id, viewerId = null) {
+  static async getById(id, viewerId = null) {
+    const likedByViewer = viewerId 
+      ? `(SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = $1) AS liked_by_viewer`
+      : `0 AS liked_by_viewer`;
+    
+    const params = viewerId ? [viewerId, id] : [id];
+    const idParamIndex = viewerId ? 2 : 1;
+
     return getOne(
       `SELECT p.*, p.image_url,
           u.username,
           u.avatar,
           (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) AS likes_count,
           (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) AS comments_count,
-          ${viewerId ? '(SELECT COUNT(*) FROM post_likes WHERE post_id = p.id AND user_id = $1) AS liked_by_viewer' : '0 AS liked_by_viewer'}
+          ${likedByViewer}
        FROM posts p
        JOIN users u ON u.id = p.user_id
-       WHERE p.id = $${viewerId ? 2 : 1}`,
-      viewerId ? [viewerId, id] : [id]
+       WHERE p.id = $${idParamIndex}`,
+      params
     );
   }
 
-  static getFeed(userId, limit = 20, offset = 0) {
+  static async getFeed(userId, limit = 20, offset = 0) {
     return getAll(
       `SELECT p.*,
           u.username,
@@ -42,8 +49,8 @@ class Post {
     );
   }
 
-  static countFeed(userId) {
-    const r = getOne(
+  static async countFeed(userId) {
+    const r = await getOne(
       `SELECT COUNT(*) as n FROM posts p
        WHERE p.user_id = $1
           OR p.user_id IN (SELECT following_id FROM follows WHERE follower_id = $2)`,
@@ -52,7 +59,7 @@ class Post {
     return r?.n ?? 0;
   }
 
-  static getByAuthor(authorId, viewerId, limit = 20, offset = 0) {
+  static async getByAuthor(authorId, viewerId, limit = 20, offset = 0) {
     return getAll(
       `SELECT p.*,
           u.username,
@@ -69,29 +76,29 @@ class Post {
     );
   }
 
-  static countByAuthor(authorId) {
-    const r = getOne(
+  static async countByAuthor(authorId) {
+    const r = await getOne(
       `SELECT COUNT(*) as n FROM posts WHERE user_id = $1`,
       [authorId]
     );
     return r?.n ?? 0;
   }
 
-  static toggleLike(postId, userId) {
-    const liked = getOne(
+  static async toggleLike(postId, userId) {
+    const liked = await getOne(
       `SELECT id FROM post_likes WHERE post_id = $1 AND user_id = $2`,
       [postId, userId]
     );
     if (liked) {
-      run(`DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2`, [postId, userId]);
+      await run(`DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2`, [postId, userId]);
       return false;
     }
-    run(`INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)`, [postId, userId]);
+    await run(`INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)`, [postId, userId]);
     return true;
   }
 
-  static addComment(postId, userId, content) {
-    const { lastInsertRowid } = run(
+  static async addComment(postId, userId, content) {
+    const result = await run(
       `INSERT INTO post_comments (post_id, user_id, content) VALUES ($1, $2, $3) RETURNING id`,
       [postId, userId, content]
     );
@@ -100,11 +107,11 @@ class Post {
        FROM post_comments c
        JOIN users u ON u.id = c.user_id
        WHERE c.id = $1`,
-      [lastInsertRowid]
+      [result.lastInsertRowid]
     );
   }
 
-  static getComments(postId, limit = 20, offset = 0) {
+  static async getComments(postId, limit = 20, offset = 0) {
     return getAll(
       `SELECT c.*, u.username, u.avatar
        FROM post_comments c

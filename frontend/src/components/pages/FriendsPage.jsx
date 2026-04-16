@@ -1,249 +1,187 @@
-import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, UserPlus, UserMinus, MessageCircle, Users, Wifi, Clock } from 'lucide-react'
-import api from '../../services/api'
-import UserBadge from '../UserBadge'
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const FriendsPage = () => {
+  const { user: currentUser } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
+  // Состояния для списков
+  const [following, setFollowing] = useState([]);
+  const [followers, setFollowers] = useState([]);
 
-const STATUS_COLORS = { online: 'var(--status-online)', away: 'var(--status-away)', busy: 'var(--status-busy)', offline: 'var(--status-offline)' }
-const STATUS_LABELS = { online: 'Онлайн', away: 'Отошёл', busy: 'Занят', offline: 'Оффлайн' }
+  // Загрузка данных
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError('');
 
-function UserCard({ user, isFollowing, followLoading, onToggleFollow, onMessage, onProfile }) {
-  const colors = ['#6d5ef5','#7c3aed','#5b21b6']
-  const bg = colors[(user.username?.charCodeAt(0) || 0) % colors.length]
-
-  return (
-    <div className="card animate-fade-in" style={{ padding: 14, display: 'flex', alignItems: 'center', gap: 14 }}>
-      <div onClick={() => onProfile(user.id)} style={{
-        width: 48, height: 48, borderRadius: '50%', flexShrink: 0,
-        background: bg, overflow: 'hidden',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: 20, fontWeight: 600, color: '#fff', cursor: 'pointer', position: 'relative',
-      }}>
-        {user.avatar
-          ? <img src={`${API_URL}${user.avatar}`} alt={user.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : user.username?.[0]?.toUpperCase()
+      // Загрузка подписок
+      try {
+        const followRes = await api.get('/follows/following');
+        let fList = [];
+        if (Array.isArray(followRes.data)) {
+          fList = followRes.data;
+        } else if (followRes.data && Array.isArray(followRes.data.users)) {
+          fList = followRes.data.users;
+        } else if (followRes.data && Array.isArray(followRes.data.following)) {
+          fList = followRes.data.following;
+        } else if (followRes.data && followRes.data.data && Array.isArray(followRes.data.data)) {
+           fList = followRes.data.data;
         }
-        <span style={{
-          position: 'absolute', right: 1, bottom: 1,
-          width: 11, height: 11, borderRadius: '50%',
-          background: STATUS_COLORS[user.status] || STATUS_COLORS.offline,
-          border: '2px solid var(--bg-surface)',
-        }} />
-      </div>
-
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <button onClick={() => onProfile(user.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{user.username}</p>
-          {user.badge_type && <UserBadge type={user.badge_type} size="small" />}
-        </button>
-        <p style={{ fontSize: 12, color: STATUS_COLORS[user.status] || 'var(--text-muted)', marginTop: 2 }}>
-          {STATUS_LABELS[user.status] || 'Оффлайн'}
-        </p>
-      </div>
-
-      <div style={{ display: 'flex', gap: 6 }}>
-        <button className="btn-icon" onClick={() => onMessage(user.id)} title="Написать">
-          <MessageCircle size={16} />
-        </button>
-        <button
-          className={isFollowing ? 'btn btn-secondary' : 'btn btn-primary'}
-          onClick={() => onToggleFollow(user.id)}
-          disabled={followLoading}
-          style={{ padding: '6px 12px', fontSize: 12, gap: 5 }}
-        >
-          {isFollowing ? <><UserMinus size={13} /> Отписаться</> : <><UserPlus size={13} /> Подписаться</>}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-export default function FriendsPage() {
-  const navigate = useNavigate()
-  const [tab, setTab]             = useState('following')
-  const [query, setQuery]         = useState('')
-  const [searchResults, setSearchResults] = useState([])
-  const [following, setFollowing] = useState([])   // actual following list
-  const [followingMap, setFollowingMap]   = useState({})
-  const [loadingMap, setLoadingMap]       = useState({})
-  const [loading, setLoading]     = useState(false)
-  const [initialLoad, setInitialLoad] = useState(true)
-  const [error, setError]         = useState('')
-
-  // Load own following list on mount (FIX: tabs now have real data)
-  useEffect(() => {
-    loadFollowing()
-  }, [])
-
-  async function loadFollowing() {
-    setInitialLoad(true)
-    try {
-      const r = await api.get('/follows/me')
-      const list = r.data.following || []
-      setFollowing(list)
-      const map = {}
-      list.forEach(u => { map[u.id] = true })
-      setFollowingMap(map)
-    } catch { /* silent */ }
-    finally { setInitialLoad(false) }
-  }
-
-  // Search with debounce — FIX: N+1 eliminated, follow status from /follows/me map
-  useEffect(() => {
-    if (tab !== 'search') return
-    if (query.length < 2) { setSearchResults([]); return }
-    const t = setTimeout(() => search(query), 350)
-    return () => clearTimeout(t)
-  }, [query, tab])
-
-  async function search(q) {
-    setLoading(true)
-    try {
-      const r = await api.get(`/users/search?q=${encodeURIComponent(q)}`)
-      const users = r.data.users || []
-      setSearchResults(users)
-      // FIX: follow status from already-loaded followingMap, no extra requests
-    } catch { setError('Ошибка поиска') }
-    finally { setLoading(false) }
-  }
-
-  async function toggleFollow(userId) {
-    if (loadingMap[userId]) return
-    const prev = followingMap[userId]
-    setFollowingMap(m => ({ ...m, [userId]: !prev }))
-    setLoadingMap(m => ({ ...m, [userId]: true }))
-    try {
-      if (prev) {
-        await api.delete(`/follows/${userId}`)
-        setFollowing(list => list.filter(u => u.id !== userId))
-      } else {
-        await api.post(`/follows/${userId}`)
-        // Reload following list to get fresh data
-        await loadFollowing()
+        setFollowing(fList);
+      } catch (e) {
+        console.warn('Не удалось загрузить подписки', e);
+        setFollowing([]);
       }
-    } catch {
-      setFollowingMap(m => ({ ...m, [userId]: prev })) // revert
+
+      // Загрузка подписчиков
+      try {
+        const followersRes = await api.get('/follows/followers');
+        let flList = [];
+        if (Array.isArray(followersRes.data)) {
+          flList = followersRes.data;
+        } else if (followersRes.data && Array.isArray(followersRes.data.users)) {
+          flList = followersRes.data.users;
+        } else if (followersRes.data && Array.isArray(followersRes.data.followers)) {
+          flList = followersRes.data.followers;
+        } else if (followersRes.data && followersRes.data.data && Array.isArray(followersRes.data.data)) {
+           flList = followersRes.data.data;
+        }
+        setFollowers(flList);
+      } catch (e) {
+        console.warn('Не удалось загрузить подписчиков', e);
+        setFollowers([]);
+      }
+
+    } catch (err) {
+      console.error('Критическая ошибка загрузки друзей:', err);
+      setError('Не удалось загрузить данные о друзьях');
     } finally {
-      setLoadingMap(m => ({ ...m, [userId]: false }))
+      setLoading(false);
     }
-  }
+  };
 
-  async function startChat(userId) {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleUnfollow = async (userId) => {
+    if (!window.confirm('Отписаться от этого пользователя?')) return;
     try {
-      const r = await api.post('/chats/private', { userId })
-      navigate(r.data?.chat?.id ? `/chat/${r.data.chat.id}` : '/messages')
-    } catch { navigate('/messages') }
+      await api.delete(`/follows/${userId}`);
+      setFollowing(prev => prev.filter(u => u.id !== userId));
+      // Также удаляем из подписчиков, если там был (для взаимных)
+      setFollowers(prev => prev.filter(u => u.id !== userId));
+    } catch (err) {
+      alert('Ошибка при отписке');
+    }
+  };
+
+  if (loading) {
+    return <div className="p-4 text-center">Загрузка списка друзей...</div>;
   }
 
-  const tabs = [
-    { key: 'following', label: 'Подписки', icon: Users },
-    { key: 'online',    label: 'Онлайн',   icon: Wifi },
-    { key: 'search',    label: 'Поиск',    icon: Search },
-  ]
+  if (error) {
+    return <div className="p-4 text-red-500">{error}</div>;
+  }
 
-  // Compute displayed list per tab (FIX: all tabs have distinct real data)
-  const displayList = tab === 'search'
-    ? searchResults
-    : tab === 'online'
-      ? following.filter(u => u.status === 'online')
-      : following
+  // Безопасное приведение к массиву перед рендером
+  const safeFollowing = Array.isArray(following) ? following : [];
+  const safeFollowers = Array.isArray(followers) ? followers : [];
 
   return (
-    <div style={{ minHeight: '100dvh', position: 'relative', zIndex: 1 }}>
-      <header className="page-header">
-        <h1 className="page-title">Друзья</h1>
-      </header>
+    <div className="container mx-auto p-4 max-w-4xl">
+      <h1 className="text-2xl font-bold mb-6">Друзья и Подписки</h1>
 
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '20px 16px' }}>
-        {/* Tabs */}
-        <div className="tabs" style={{ marginBottom: 20 }}>
-          {tabs.map(t => {
-            const Icon = t.icon
-            const badge = t.key === 'online' ? following.filter(u => u.status === 'online').length : null
-            return (
-              <button key={t.key} className={`tab-btn ${tab === t.key ? 'active' : ''}`}
-                onClick={() => setTab(t.key)}
-                style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon size={14} />
-                {t.label}
-                {badge != null && badge > 0 && (
-                  <span style={{
-                    background: 'var(--status-online)', color: '#fff',
-                    fontSize: 10, fontWeight: 600, borderRadius: 10,
-                    minWidth: 16, height: 16, padding: '0 4px',
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  }}>{badge}</span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Search bar — only in search tab */}
-        {tab === 'search' && (
-          <div style={{ position: 'relative', marginBottom: 20 }}>
-            <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input value={query} onChange={e => setQuery(e.target.value)}
-              className="ui-input" placeholder="Найти пользователя..."
-              style={{ paddingLeft: 38 }} autoFocus />
-          </div>
-        )}
-
-        {error && <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 12 }}>{error}</p>}
-
-        {/* Spinner */}
-        {(loading || (tab !== 'search' && initialLoad)) && (
-          <div style={{ textAlign: 'center', padding: 32 }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid var(--border)', borderTopColor: 'var(--accent)', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
-          </div>
-        )}
-
-        {/* Empty states */}
-        {!loading && !initialLoad && tab === 'search' && query.length >= 2 && displayList.length === 0 && (
-          <div className="empty-state"><Users size={36} /><p>Никого не найдено</p></div>
-        )}
-        {!loading && !initialLoad && tab === 'search' && query.length < 2 && (
-          <div className="empty-state">
-            <Search size={36} />
-            <p style={{ fontSize: 15, fontWeight: 500 }}>Поиск пользователей</p>
-            <p style={{ fontSize: 13 }}>Введите имя или email</p>
-          </div>
-        )}
-        {!loading && !initialLoad && tab === 'following' && displayList.length === 0 && (
-          <div className="empty-state">
-            <Users size={36} />
-            <p style={{ fontSize: 15, fontWeight: 500 }}>Нет подписок</p>
-            <p style={{ fontSize: 13 }}>Найдите людей во вкладке «Поиск»</p>
-            <button className="btn btn-primary" onClick={() => setTab('search')}>Найти людей</button>
-          </div>
-        )}
-        {!loading && !initialLoad && tab === 'online' && displayList.length === 0 && (
-          <div className="empty-state">
-            <Wifi size={36} />
-            <p style={{ fontSize: 15, fontWeight: 500 }}>Никого нет онлайн</p>
-            <p style={{ fontSize: 13 }}>Из ваших подписок никого нет в сети</p>
-          </div>
-        )}
-
-        {/* Results */}
-        {!loading && !initialLoad && displayList.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {displayList.map(u => (
-              <UserCard
-                key={u.id}
-                user={u}
-                isFollowing={!!followingMap[u.id]}
-                followLoading={!!loadingMap[u.id]}
-                onToggleFollow={toggleFollow}
-                onMessage={startChat}
-                onProfile={id => navigate(`/users/${id}`)}
-              />
+      {/* Вкладка: Подписки */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4 border-b pb-2">
+          Вы подписаны ({safeFollowing.length})
+        </h2>
+        {safeFollowing.length === 0 ? (
+          <p className="text-gray-500 italic">Вы пока ни на кого не подписаны.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {safeFollowing.map((user) => (
+              <div key={user.id} className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                <Link to={`/profile/${user.id}`} className="flex-shrink-0">
+                  <img 
+                    src={user.avatar || '/default-avatar.png'} 
+                    alt={user.username} 
+                    className="w-12 h-12 rounded-full object-cover mr-3"
+                  />
+                </Link>
+                <div className="flex-1 min-w-0">
+                  <Link to={`/profile/${user.id}`} className="font-medium hover:underline truncate block">
+                    {user.username}
+                  </Link>
+                  {user.first_name || user.last_name ? (
+                    <span className="text-xs text-gray-500 truncate block">
+                      {user.first_name} {user.last_name}
+                    </span>
+                  ) : null}
+                </div>
+                <button
+                  onClick={() => handleUnfollow(user.id)}
+                  className="ml-2 px-3 py-1 text-xs bg-red-100 text-red-600 rounded hover:bg-red-200 transition"
+                >
+                  Отписаться
+                </button>
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Вкладка: Подписчики */}
+      <div>
+        <h2 className="text-xl font-semibold mb-4 border-b pb-2">
+          Ваши подписчики ({safeFollowers.length})
+        </h2>
+        {safeFollowers.length === 0 ? (
+          <p className="text-gray-500 italic">У вас пока нет подписчиков.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {safeFollowers.map((user) => {
+              const isFollowingBack = safeFollowing.some(f => f.id === user.id);
+              return (
+                <div key={user.id} className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+                  <Link to={`/profile/${user.id}`} className="flex-shrink-0">
+                    <img 
+                      src={user.avatar || '/default-avatar.png'} 
+                      alt={user.username} 
+                      className="w-12 h-12 rounded-full object-cover mr-3"
+                    />
+                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <Link to={`/profile/${user.id}`} className="font-medium hover:underline truncate block">
+                      {user.username}
+                    </Link>
+                    {user.first_name || user.last_name ? (
+                      <span className="text-xs text-gray-500 truncate block">
+                        {user.first_name} {user.last_name}
+                      </span>
+                    ) : null}
+                  </div>
+                  {!isFollowingBack && user.id !== currentUser?.id && (
+                     <Link 
+                       to={`/profile/${user.id}`}
+                       className="ml-2 px-3 py-1 text-xs bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition"
+                     >
+                       Подписаться
+                     </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
-  )
-}
+  );
+};
+
+export default FriendsPage;

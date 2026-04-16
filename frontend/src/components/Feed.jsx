@@ -426,15 +426,38 @@ export default function Feed() {
 
   async function loadFeed(off = 0, replace = false) {
     try {
-      if (replace) setLoading(true)
-      const r = await api.get(`/posts/feed?limit=${LIMIT}&offset=${off}`)
-      const newPosts = r.data.posts || []
-      const total    = r.data.meta?.total ?? newPosts.length
-      setPosts(prev => replace ? newPosts : [...prev, ...newPosts])
-      setHasMore(off + newPosts.length < total)
-      setOffset(off + newPosts.length)
-    } catch { setError('Не удалось загрузить ленту') }
-    finally { setLoading(false) }
+      if (replace) setLoading(true);
+      
+      const r = await api.get(`/posts/feed?limit=${LIMIT}&offset=${off}`);
+      
+      // Исправление: проверяем, является ли ответ массивом или объектом с полем posts
+      let newPosts = [];
+      if (Array.isArray(r.data)) {
+        newPosts = r.data;
+      } else if (r.data && Array.isArray(r.data.posts)) {
+        newPosts = r.data.posts;
+      } else {
+        console.warn('Неверный формат ответа от сервера:', r.data);
+        newPosts = [];
+      }
+
+      // Безопасное получение total
+      const total = r.data?.meta?.total ?? (newPosts.length > 0 ? newPosts.length : off + newPosts.length);
+      
+      setPosts(prev => replace ? newPosts : [...prev, ...newPosts]);
+      setHasMore(off + newPosts.length < total);
+      setOffset(off + newPosts.length);
+      
+      if (replace && newPosts.length === 0) {
+        // Опционально: можно установить флаг "лента пуста", если нужно
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки ленты:', err);
+      setError('Не удалось загрузить ленту');
+      if (replace) setPosts([]); // Сбрасываем при полной перезагрузке в случае ошибки
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleImagePick(e) {

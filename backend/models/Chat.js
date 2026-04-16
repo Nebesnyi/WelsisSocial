@@ -2,14 +2,14 @@ const { getOne, getAll, run } = require('../config/database');
 
 class Chat {
   static async createPrivate(user1Id, user2Id) {
-    const existing = getOne(
+    const existing = await getOne(
       `SELECT c.id FROM chats c
-      JOIN chat_members cm1 ON c.id = cm1.chat_id
-      JOIN chat_members cm2 ON c.id = cm2.chat_id
-      WHERE c.type = 'private' AND cm1.user_id = $1 AND cm2.user_id = $2`,
+       JOIN chat_members cm1 ON c.id = cm1.chat_id
+       JOIN chat_members cm2 ON c.id = cm2.chat_id
+       WHERE c.type = 'private' AND cm1.user_id = $1 AND cm2.user_id = $2`,
       [user1Id, user2Id]
     );
-    if (existing) return this.getById(existing.id);
+    if (existing) return await this.getById(existing.id);
 
     const result = await run(`INSERT INTO chats (type) VALUES ('private') RETURNING id`);
     const chatId = result.lastInsertRowid;
@@ -18,7 +18,7 @@ class Chat {
     await run(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)`, [chatId, user1Id]);
     await run(`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)`, [chatId, user2Id]);
 
-    return this.getById(chatId);
+    return await this.getById(chatId);
   }
 
   static async createGroup(name, ownerUserId, memberUserIds) {
@@ -37,10 +37,10 @@ class Chat {
       }
     }
 
-    return this.getById(chatId);
+    return await this.getById(chatId);
   }
 
-  static getById(id) {
+  static async getById(id) {
     return getOne(
       `SELECT c.*,
         (SELECT COUNT(*) FROM messages WHERE chat_id = c.id) as message_count
@@ -49,12 +49,7 @@ class Chat {
     );
   }
 
-  /**
-   * Чаты пользователя с пагинацией.
-   * [FIX] Добавлены limit/offset — без них при сотнях чатов
-   * вся таблица уходила в память одним запросом.
-   */
-  static getByUserId(userId, limit = 30, offset = 0) {
+  static async getByUserId(userId, limit = 30, offset = 0) {
     return getAll(
       `WITH user_chats AS (
          SELECT c.id, c.name, c.type, c.created_at, c.updated_at
@@ -104,9 +99,8 @@ class Chat {
     );
   }
 
-  /** Общее количество чатов пользователя — для meta.total */
-  static countByUserId(userId) {
-    const r = getOne(
+  static async countByUserId(userId) {
+    const r = await getOne(
       `SELECT COUNT(*) as n FROM chats c
        JOIN chat_members cm ON c.id = cm.chat_id
        WHERE cm.user_id = $1`,
@@ -115,18 +109,18 @@ class Chat {
     return r?.n ?? 0;
   }
 
-  static addMember(chatId, userId, role = 'member') {
-    return run(
+  static async addMember(chatId, userId, role = 'member') {
+    return await run(
       `INSERT INTO chat_members (chat_id, user_id, role) VALUES ($1, $2, $3) ON CONFLICT (chat_id, user_id) DO NOTHING`,
       [chatId, userId, role]
     );
   }
 
-  static removeMember(chatId, userId) {
-    return run(`DELETE FROM chat_members WHERE chat_id = $1 AND user_id = $2`, [chatId, userId]);
+  static async removeMember(chatId, userId) {
+    return await run(`DELETE FROM chat_members WHERE chat_id = $1 AND user_id = $2`, [chatId, userId]);
   }
 
-  static getMembers(chatId) {
+  static async getMembers(chatId) {
     return getAll(
       `SELECT u.id, u.username, u.avatar, u.status, cm.role
        FROM chat_members cm JOIN users u ON cm.user_id = u.id
@@ -135,13 +129,13 @@ class Chat {
     );
   }
 
-  static updateName(chatId, name) {
-    run(`UPDATE chats SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`, [name, chatId]);
-    return this.getById(chatId);
+  static async updateName(chatId, name) {
+    await run(`UPDATE chats SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`, [name, chatId]);
+    return await this.getById(chatId);
   }
 
-  static delete(chatId) {
-    return run(`DELETE FROM chats WHERE id = $1`, [chatId]);
+  static async delete(chatId) {
+    return await run(`DELETE FROM chats WHERE id = $1`, [chatId]);
   }
 }
 

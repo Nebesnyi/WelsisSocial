@@ -1,6 +1,6 @@
 /**
  * Messenger Backend Server
- * Node.js + Express + Socket.io + better-sqlite3
+ * Node.js + Express + Socket.io + PostgreSQL (node-postgres)
  */
 
 require('dotenv').config();
@@ -12,10 +12,13 @@ const path = require('path');
 const fs = require('fs');
 const fsPromises = require('fs/promises');
 
-const { initializeDatabase } = require('./config/database');
+// Импортируем модели и конфиги
+// В новой версии database.js нет initializeDatabase, только pool и хелперы
+const db = require('./config/database'); 
 const onlineUsers = require('./config/onlineUsers');
 const { wsMessageLimiter, wsTypingLimiter } = require('./middleware/rateLimiter');
 const { authMiddleware } = require('./middleware/auth');
+
 const Message = require('./models/Message');
 const Chat = require('./models/Chat');
 const User = require('./models/User');
@@ -28,7 +31,6 @@ const messageRoutes = require('./routes/messages');
 const followRoutes = require('./routes/follows');
 const notificationRoutes = require('./routes/notifications');
 const adminRoutes = require('./routes/admin');
-const Notification = require('./models/Notification');
 
 const app = express();
 const server = http.createServer(app);
@@ -41,7 +43,7 @@ if (jwtSecret.length < 32) {
 // Helmet security headers
 const helmet = require('helmet');
 app.use(helmet({
-  contentSecurityPolicy: false, // Отключено для разработки, включить в production
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
 }));
 
@@ -78,7 +80,6 @@ const io = new Server(server, {
 
 app.use(cors(corsOptions));
 app.use((req, res, next) => {
-  // Helmet уже устанавливает большинство заголовков, оставляем только кастомные
   res.setHeader('Referrer-Policy', 'no-referrer');
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -89,12 +90,11 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Global rate limiter - применяется ко всем запросам
+// Global rate limiter
 const { apiLimiter } = require('./middleware/rateLimiter');
 app.use('/api', apiLimiter);
 
-// Static files with CORS headers - важно для загрузки аватарок и других файлов
-// Используем отдельный CORS middleware для /uploads
+// Static files
 const uploadsCors = cors({
   origin: allowedOrigins,
   methods: ['GET', 'OPTIONS'],
@@ -138,22 +138,18 @@ app.use('/api/notifications', notificationRoutes);
 app.use((err, req, res, next) => {
   console.error('💥 Global Error:', err);
   
-  // Rate limit errors
   if (err.code === 'LIMIT_TOO_MANY_REQUESTS' || err.statusCode === 429) {
     return res.status(429).json({ error: 'Слишком много запросов, попробуйте позже' });
   }
   
-  // Multer errors
-  if (err instanceof multer.MulterError) {
+  if (err.name === 'MulterError') {
     return res.status(400).json({ error: `Ошибка загрузки: ${err.message}` });
   }
   
-  // JSON parse errors
   if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
     return res.status(400).json({ error: 'Некорректный JSON' });
   }
   
-  // Default error
   const status = err.statusCode || err.status || 500;
   res.status(status).json({
     error: status === 500 ? 'Внутренняя ошибка сервера' : err.message,
@@ -162,20 +158,27 @@ app.use((err, req, res, next) => {
 });
 
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Проверка подключения к БД
+    await db.getOne('SELECT NOW()');
+    res.json({ status: 'ok', timestamp: new Date().toISOString(), db: 'connected' });
+  } catch (e) {
+    res.status(500).json({ status: 'error', message: e.message });
+  }
 });
 
 // ─── Socket.io auth middleware ────────────────────────────────────────────────
 
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
   if (!token) return next(new Error('Требуется авторизация'));
 
   const jwt = require('jsonwebtoken');
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = User.getById(decoded.userId);
+    // User.getById теперь асинхронный
+    const user = await User.getById(decoded.userId);
     if (!user) return next(new Error('Пользователь не найден'));
     socket.user = user;
     next();
@@ -192,14 +195,23 @@ io.on('connection', (socket) => {
   console.log(`🔌 Подключён: ${socket.user.username} (${uid})`);
 
   onlineUsers.set(uid, socket.id);
-  User.updateStatus(uid, 'online');
+  
+  // Обновляем статус асинхронно
+  User.updateStatus(uid, 'online').catch(err => console.error('Ошибка обновления статуса:', err));
+  
   io.emit('user:online', { userId: uid });
 
-  const userChats = Chat.getByUserId(uid) || [];
-  for (const chat of userChats) {
-    socket.join(`chat:${chat.id}`);
-  }
-  console.log(`📋 ${socket.user.username} подключён к ${userChats.length} чатам`);
+  // Получаем чаты асинхронно
+  Chat.getByUserId(uid)
+    .then(userChats => {
+      if (userChats) {
+        for (const chat of userChats) {
+          socket.join(`chat:${chat.id}`);
+        }
+        console.log(`📋 ${socket.user.username} подключён к ${userChats.length} чатам`);
+      }
+    })
+    .catch(err => console.error('Ошибка получения чатов:', err));
 
   // ─── message:send ──────────────────────────────────────────────────────────
 
@@ -211,26 +223,26 @@ io.on('connection', (socket) => {
     try {
       const { chatId, content } = data;
 
-      // Валидация: пустое сообщение через сокет недопустимо
       const trimmedContent = typeof content === 'string' ? content.trim() : '';
       if (!trimmedContent) {
         socket.emit('error', { message: 'Сообщение не может быть пустым' });
         return;
       }
 
-      const chat = Chat.getById(chatId);
+      const chat = await Chat.getById(chatId);
       if (!chat) {
         socket.emit('error', { message: 'Чат не найден' });
         return;
       }
 
-      const members = Chat.getMembers(chatId);
+      const members = await Chat.getMembers(chatId);
       if (!members.some(m => m.id === uid)) {
         socket.emit('error', { message: 'Доступ запрещён' });
         return;
       }
 
-      const message = Message.create(chatId, uid, trimmedContent, null);
+      // Message.create теперь асинхронный
+      const message = await Message.create(chatId, uid, trimmedContent, null);
       if (!message) {
         socket.emit('error', { message: 'Ошибка создания сообщения' });
         return;
@@ -265,7 +277,7 @@ io.on('connection', (socket) => {
     try {
       const { messageId, chatId } = data;
 
-      const message = Message.getById(messageId);
+      const message = await Message.getById(messageId);
       if (!message) {
         socket.emit('error', { message: 'Сообщение не найдено' });
         return;
@@ -276,7 +288,7 @@ io.on('connection', (socket) => {
         return;
       }
 
-      Message.delete(messageId);
+      await Message.delete(messageId);
 
       if (message.file_url) {
         const safeFilename = path.basename(message.file_url);
@@ -301,7 +313,7 @@ io.on('connection', (socket) => {
 
   // ─── chat:join ─────────────────────────────────────────────────────────────
 
-  socket.on('chat:join', (data) => {
+  socket.on('chat:join', async (data) => {
     try {
       const { chatId } = data;
 
@@ -310,7 +322,7 @@ io.on('connection', (socket) => {
         return;
       }
 
-      const members = Chat.getMembers(chatId);
+      const members = await Chat.getMembers(chatId);
       const isMember = members.some(m => m.id === uid);
 
       if (!isMember) {
@@ -343,9 +355,9 @@ io.on('connection', (socket) => {
 
   // ─── message:read ──────────────────────────────────────────────────────────
 
-  socket.on('message:read', (data) => {
+  socket.on('message:read', async (data) => {
     const { chatId } = data;
-    Message.markAsRead(chatId, uid);
+    await Message.markAsRead(chatId, uid);
     socket.to(`chat:${chatId}`).emit('message:read', { chatId, userId: uid });
   });
 
@@ -366,7 +378,7 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`🔌 Отключён: ${socket.user.username} (${uid})`);
     onlineUsers.delete(uid);
-    User.updateStatus(uid, 'offline');
+    User.updateStatus(uid, 'offline').catch(err => console.error('Ошибка обновления статуса:', err));
     io.emit('user:offline', { userId: uid });
   });
 });
@@ -376,17 +388,18 @@ io.on('connection', (socket) => {
 const PORT = process.env.PORT || 3000;
 
 function startServer() {
-  initializeDatabase();
+  // Инициализация БД больше не требуется здесь, пул создается автоматически при импорте
+  // Если нужны миграции, их нужно запускать отдельно или добавить функцию migrate() в database.js
   createUploadDirectories();
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log('');
     console.log('═══════════════════════════════════════════════════');
-    console.log('  🚀 MESSENGER BACKEND ЗАПУЩЕН');
+    console.log('  🚀 MESSENGER BACKEND ЗАПУЩЕН (PostgreSQL)');
     console.log('═══════════════════════════════════════════════════');
     console.log(`  📍 Порт: ${PORT}`);
     console.log(`  🌐 URL: http://localhost:${PORT}`);
-    console.log(`  🗄️  DB:  better-sqlite3 (WAL mode)`);
+    console.log(`  🗄️  DB:  PostgreSQL (node-postgres)`);
     console.log('═══════════════════════════════════════════════════');
     console.log('');
   });
