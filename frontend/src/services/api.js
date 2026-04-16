@@ -1,37 +1,34 @@
-import axios from 'axios'
+import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const api = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-})
+});
 
+// Добавляем токен к каждому запросу
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('token');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  // При отправке FormData удаляем Content-Type — браузер сам выставит
-  // multipart/form-data с правильным boundary. Если оставить manual override
-  // без boundary, multer на сервере не может распарсить тело → 500.
-  if (config.data instanceof FormData) {
-    delete config.headers['Content-Type']
-  }
-  return config
-})
+  return config;
+});
 
+// Обработка ошибок ответа (опционально)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+      // Токен истек или невалиден
+      localStorage.removeItem('token');
+      window.location.href = '/login';
     }
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
+);
 
-export default api
+export default api;

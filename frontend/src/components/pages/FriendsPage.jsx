@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { api } from '../../services/api';
+import api from '../../services/api'; // Исправленный импорт (без фигурных скобок)
 import { useAuth } from '../../contexts/AuthContext';
 
 const FriendsPage = () => {
@@ -73,7 +73,6 @@ const FriendsPage = () => {
     try {
       await api.delete(`/follows/${userId}`);
       setFollowing(prev => prev.filter(u => u.id !== userId));
-      // Также удаляем из подписчиков, если там был (для взаимных)
       setFollowers(prev => prev.filter(u => u.id !== userId));
     } catch (err) {
       alert('Ошибка при отписке');
@@ -88,7 +87,6 @@ const FriendsPage = () => {
     return <div className="p-4 text-red-500">{error}</div>;
   }
 
-  // Безопасное приведение к массиву перед рендером
   const safeFollowing = Array.isArray(following) ? following : [];
   const safeFollowers = Array.isArray(followers) ? followers : [];
 
